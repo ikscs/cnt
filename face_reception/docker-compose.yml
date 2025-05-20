@@ -1,0 +1,17 @@
+services:
+  face_reception:
+    container_name: face_reception
+    build: .
+#    ports:
+#      - "8081:8000"
+    volumes:
+      - /var/screenshots:/var/screenshots
+    env_file: ../.env
+    networks:
+      - swag_network
+    restart: always
+
+networks:
+  swag_network:
+    driver: bridge
+    external: true

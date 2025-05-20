@@ -1,0 +1,17 @@
+services:
+  fair_face:
+    container_name: fair_face
+    hostname: fair_face
+    build: .
+    ports:
+      - "8090:8000"
+    volumes:
+      - /var/screenshots:/var/screenshots
+    networks:
+      - swag_network
+    restart: always
+
+networks:
+  swag_network:
+    driver: bridge
+    external: true

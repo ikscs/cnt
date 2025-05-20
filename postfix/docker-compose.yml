@@ -1,0 +1,26 @@
+services:
+  quick-postfix-relay:
+    container_name: postfix
+#    image: eduardosilva/quick-postfix-relay:latest
+    build: .
+    env_file: .env
+    ports:
+      # Map external ports to internal ports (465 and 587)
+      - "${SSL_PORT:-465}:465"
+      - "${TLS_PORT:-587}:587"
+      # Optional alternative external port mappings
+      # - "${SSL_PORT_ALT}:465"
+      # - "${TLS_PORT_ALT}:587"
+    volumes:
+      - postfix-certs:/etc/postfix/certs
+    networks:
+      - swag_network
+    restart: always
+
+volumes:
+  postfix-certs:
+
+networks:
+  swag_network:
+    driver: bridge
+    external: true

@@ -1,0 +1,7 @@
+myhostname = scs
+mydomain = scs
+
+mydestination = $myhostname, scs, localhost.localdomain, localhost
+
+virtual_alias_domains = hash:/etc/postfix/virtual_domains
+virtual_alias_maps = hash:/etc/postfix/virtual

@@ -1,0 +1,8 @@
+tf-keras
+deepface
+opencv-python
+uvicorn[standard]
+pillow
+numpy
+python-multipart
+fastapi==0.98.0

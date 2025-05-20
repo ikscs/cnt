@@ -1,0 +1,15 @@
+services:
+  manager:
+    container_name: manager
+    build: .
+    volumes:
+      - /var/screenshots:/var/screenshots
+    env_file: ../.env
+    networks:
+      - swag_network
+    restart: always
+
+networks:
+  swag_network:
+    driver: bridge
+    external: true

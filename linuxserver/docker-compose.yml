@@ -1,0 +1,38 @@
+services:
+  swag:
+    image: linuxserver/swag
+    container_name: swag
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - URL={DOMAIN}
+      - EXTRA_DOMAINS={EXTRA_DOMAINS}
+      - VALIDATION=http # Use dns for DNS validation or http for HTTP validation
+      - EMAIL=${EMAIL}
+      - SECRET_VALUE=${SECRET_VALUE}
+    volumes:
+      - ./swag/config:/config
+    ports:
+      - "443:443"  # HTTPS
+      - "80:80"    # HTTP
+    restart: always
+    networks:
+      - swag_network
+
+  webserver:
+    image: nginx:alpine
+    container_name: webserver
+    volumes:
+      - ./web:/usr/share/nginx/html  # Web content directory
+    expose:
+      - "80"  # Exposing port 80 for internal communication (swag to webserver)
+    networks:
+      - swag_network
+    depends_on:
+      - swag
+    restart: always
+
+networks:
+  swag_network:
+    driver: bridge
+    external: true

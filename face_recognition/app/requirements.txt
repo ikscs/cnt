@@ -1,0 +1,7 @@
+opencv-python
+face_recognition
+uvicorn[standard]
+pillow
+numpy
+python-multipart
+fastapi==0.98.0

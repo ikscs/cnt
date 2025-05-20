@@ -1,0 +1,19 @@
+services:
+  kv_db:
+    build: .
+    container_name: kv_db
+    hostname: kv_db
+#    ports:
+#      - "8082:5000"
+    environment:
+      DB_FOLDER: /var/screenshots
+    volumes:
+      - /var/screenshots:/var/screenshots
+    networks:
+      - swag_network
+    restart: always
+
+networks:
+  swag_network:
+    driver: bridge
+    external: true
