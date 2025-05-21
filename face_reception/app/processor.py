@@ -16,9 +16,6 @@ import psycopg2
 
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 DEMOGRAPHY_SCRIPT = DIR_PATH + "/demograph.py"
-DEMOGRAPHY_SCRIPT2 = DIR_PATH + "/demograph2.py"
-
-deep_face_url = 'http://deep_face:8000/represent.json'
 
 kv_db_url = 'http://kv_db:5000'
 
@@ -34,13 +31,22 @@ def main():
     cur = conn.cursor()
     schema = os.environ['POSTGRES_SCHEMA']
 
-    sql1 = f"UPDATE {schema}.incoming SET faces_cnt=-1 WHERE file_uuid = (SELECT file_uuid FROM {schema}.incoming WHERE faces_cnt IS NULL ORDER BY ts ASC LIMIT 1) RETURNING file_uuid"
+    sql1 = f'''
+UPDATE {schema}.incoming SET faces_cnt=-1
+WHERE file_uuid=(
+SELECT file_uuid FROM {schema}.incoming
+WHERE faces_cnt IS NULL ORDER BY ts ASC LIMIT 1
+) RETURNING file_uuid, {schema}.get_engine(file_uuid) AS engine;
+'''
     while True:
         cur.execute(sql1)
         res = cur.fetchone()
         if not res: break
         file_uuid = res[0]
+        engine = res[1].get('embedding') if res[1] else None
         conn.commit()
+        if not engine:
+            continue
 
         try:
             r = requests.get(f"{kv_db_url}/get/{file_uuid}")
@@ -50,18 +56,22 @@ def main():
             continue
 
         file_data = BytesIO(r.content)
-
-        data = {'backend': 'retinaface', 'model': 'VGG-Face', 'fmt': 'json', 'confidence': 0.8, 'area': 40}
         files = {'f': (file_uuid, file_data, 'application/octet-stream')}
 
+        data = engine['param'] if engine['param'] else {}
+        data['fmt'] = 'json'
+        data['backend'] = engine['backend']
+        data['model'] = engine['model']
+        url = f"{engine['entry_point']}/represent.json"
+
         try:
-            response = requests.post(deep_face_url, data=data, files=files)
+            response = requests.post(url, data=data, files=files)
         except Exception as err:
-            print('Deep face: ', err)
+            print('Engine error: ', err)
             break
 
         if response.status_code != 200:
-            print('status_code: ', response.status_code)
+            print(f'{url} status_code: ', response.status_code)
             break
 
         try:
@@ -103,13 +113,6 @@ def main():
 
             try:
                 process = subprocess.Popen([sys.executable, DEMOGRAPHY_SCRIPT],
-                    #stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-                )
-            except Exception as e:
-                print(str(e))
-
-            try:
-                process = subprocess.Popen([sys.executable, DEMOGRAPHY_SCRIPT2],
                     #stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
                 )
             except Exception as e:

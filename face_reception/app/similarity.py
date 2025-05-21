@@ -5,7 +5,7 @@ import psycopg2
 from run_once import run_once, run_once_pid
 #from dotenv import load_dotenv
 
-def main(src='hash', dst='neighbors', method='euclidean', demography='demography'):
+def main(src='embedding', dst='neighbors', method='cosine', demography='demography'):
     conn = psycopg2.connect(
         host=os.environ['POSTGRES_HOST'],
         port=os.environ.get('POSTGRES_PORT'),
