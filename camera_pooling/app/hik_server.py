@@ -1,10 +1,20 @@
 import os
 import psycopg2
+import psutil
 
 from fastapi import FastAPI, Form, File, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 
 from camera_hik import Camera
+
+def is_script_running(script_name):
+    for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+        try:
+            if script_name in proc.info['cmdline']:
+               return True
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            continue
+    return False
 
 def get_pg_conn():
     conn = psycopg2.connect(host=os.environ['POSTGRES_HOST'], port=os.environ.get('POSTGRES_PORT'), user=os.environ['POSTGRES_USER'], password=os.environ['POSTGRES_PASSWORD'], dbname=os.environ['POSTGRES_DB'])
@@ -14,7 +24,8 @@ app = FastAPI()
 
 @app.get("/", response_class=HTMLResponse)
 async def hello():
-    body = '''<form action="set_osd.json" method="POST">
+    body = 'healthy' if is_script_running('camera_pooling.py') else ''
+    body = f'''{body}<br><form action="set_osd.json" method="POST">
 <label for="point_id">point_id:</label><input type="text" id="point_id" name="point_id"><br>
 <input type='submit' value='submit'>
 </form>
@@ -44,7 +55,7 @@ AND point_id={point_id}
     for origin_id, credentials, data in cur.fetchall():
         if not data:
             continue
-        camera = Camera(credentials['host'], credentials['port'], credentials['user'], credentials['password'])
+        camera = Camera(credentials)
 
         res = camera.set_osd(data['header'], data['title'], data['data'])
         sql = f'''

@@ -23,7 +23,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 
 def run_job(credentials, origin, last_dt, params):
     logging.info(f"Running periodic task for {origin} from {last_dt}")
-    camera = Camera(credentials['host'], credentials['port'], credentials['user'], credentials['password'])
+    camera = Camera(credentials)
     if not camera.is_connected:
         logging.error(camera.error_txt)
         return 0, None

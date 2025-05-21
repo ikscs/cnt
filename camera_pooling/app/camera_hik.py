@@ -5,12 +5,13 @@ import requests
 from requests.auth import HTTPDigestAuth
 
 class Camera(Client):
-    def __init__(self, ip, port=80, user='admin', password='admin123'):
-        self.ip = ip
-        self.port = port
-        self.user = user
-        self.password = password
-        self.url = f"http://{ip}:{port}"
+    def __init__(self, credentials):
+        self.ip = credentials['host']
+        self.proto = credentials['proto']
+        self.port = credentials['port']
+        self.user = credentials['user']
+        self.password = credentials['password']
+        self.url = f"{self.proto}://{self.ip}:{self.port}"
         try:
             super().__init__(self.url, self.user, self.password)
             self.is_connected = True
@@ -21,7 +22,7 @@ class Camera(Client):
 
     def change_url(self, url):
         parsed = urlparse(url)
-        patched_url = urlunparse(parsed._replace(netloc=f"{self.ip}:{self.port}"))
+        patched_url = urlunparse(parsed._replace(scheme=self.proto, netloc=f"{self.ip}:{self.port}"))
         return patched_url
 
     def get_snapshot(self):
@@ -29,18 +30,17 @@ class Camera(Client):
         return response.content
 
     def make_ISAPI_request(self, url, data):
-        response = requests.post(f'{self.url}{url}', data=data, auth=HTTPDigestAuth(self.user, self.password), headers={'Content-Type': 'application/xml'})
+        response = requests.post(f'{self.url}{url}', data=data, auth=HTTPDigestAuth(self.user, self.password), headers={'Content-Type': 'application/xml'}, verify=False)
         result = xmltodict.parse(response.text)
         return result
 
     def make_ISAPI_PUT(self, url, data):
-        response = requests.put(f'{self.url}{url}', data=data, auth=HTTPDigestAuth(self.user, self.password), headers={'Content-Type': 'application/xml'})
+        response = requests.put(f'{self.url}{url}', data=data, auth=HTTPDigestAuth(self.user, self.password), headers={'Content-Type': 'application/xml'}, verify=False)
         result = xmltodict.parse(response.text)
         return result
 
     def get_media(self, url):
-        #response = requests.post(url, auth=HTTPDigestAuth(self.user, self.password))
-        response = requests.request("GET", url, auth=HTTPDigestAuth(self.user, self.password))
+        response = requests.request("GET", url, auth=HTTPDigestAuth(self.user, self.password), verify=False)
         return response.content
 
     def parse_media_url(self, url):
