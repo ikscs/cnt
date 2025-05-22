@@ -15,6 +15,8 @@ RUN pip install -r requirements.txt
 RUN pip install tensorflow-2.13.0-cp310-cp310-linux_x86_64.whl
 RUN pip cache purge
 
+RUN rm -rf /app/tensorflow-2.13.0-cp310-cp310-linux_x86_64.whl
+
 EXPOSE 8000
 
 CMD ["uvicorn", "deep_face_app:app", "--host", "0.0.0.0", "--port", "8000"]

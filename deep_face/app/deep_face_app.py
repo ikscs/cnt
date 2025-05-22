@@ -36,6 +36,7 @@ body += 'Backend <select name="backend">' + backend_opt + '</select><br>'
 body += '''
   <input type="hidden" name="actions" value="age, gender, race, emotion">
   <input type='file' name='f'><br>
+  <input type='hidden' name='area' value='40'>
   <input type='submit' value='Demography'>
 </form>
 '''
@@ -81,6 +82,8 @@ async def represent_json(
     if fmt == 'img':
         img = ImageDraw.Draw(image)
         for face in faces_data:
+            if face['facial_area']['w'] < area:
+                continue
             shape = [(face['facial_area']['x'], face['facial_area']['y']), (face['facial_area']['x'] + face['facial_area']['w'], face['facial_area']['y'] + face['facial_area']['h'])]
             img.rectangle(shape, fill=None, outline="red")
 
@@ -91,14 +94,16 @@ async def represent_json(
         return StreamingResponse(img_byte_arr, media_type="image/jpeg")
 
     elif fmt == 'json':
+        content = [face for face in faces_data if face['facial_area']['w'] >= area]
         gc.collect()
-        return JSONResponse(content=faces_data)
+        return JSONResponse(content=content)
 
 @app.post('/demography.json')
 async def demography_json(
     backend: str = Form(...),
     f: UploadFile = File(...),
-    actions: str = Form(...)
+    actions: str = Form(...),
+    area: int = Form(...)
 ):
 
     try:
@@ -119,8 +124,9 @@ async def demography_json(
         print(str(err))
         objs = []
 
+    content = [e for e in convert_numpy(objs) if e['region']['w'] >= area]
     gc.collect()
-    return JSONResponse(content=convert_numpy(objs))
+    return JSONResponse(content=content)
 
 def convert_numpy(obj):
     if isinstance(obj, dict):
