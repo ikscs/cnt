@@ -28,6 +28,7 @@ body += '''
 body += '<hr><form action="demography.json" method="POST" enctype="multipart/form-data">'
 body += '''
   <input type='file' name='f'><br>
+  <input type='hidden' name='area' value='40'>
   <input type='submit' value='Demography'>
 </form>
 '''
@@ -72,6 +73,8 @@ async def represent_json(
         img = ImageDraw.Draw(image)  
         for face in faces_data:
             shape = [face[3], face[0], face[1], face[2]]
+            if shape[2]-shape[0] < area:
+                continue
             img.rectangle(shape, fill=None, outline="red")
 
             myFont = ImageFont.load_default(size=16)
@@ -93,13 +96,16 @@ async def represent_json(
             landmark["y"] = face[0]
             landmark["w"] = face[1] - face[3]
             landmark["h"] = face[2] - face[0]
+            if landmark["w"] < area:
+                continue
             data.append({"embedding": encoding, "facial_area": landmark, "face_confidence": 1})
 
         return JSONResponse(content=convert_numpy(data))
 
 @app.post('/demography.json')
 async def demography_json(
-    f: UploadFile = File(...)
+    f: UploadFile = File(...),
+    area: int = Form(...)
 ):
 
     try:
@@ -121,6 +127,8 @@ async def demography_json(
     objs = []
     try:
         for top, right, bottom, left in faces_data:
+            if right-left < area:
+                continue
             predict.process_image(image_fr[top:bottom, left:right])
             objs.append(deepcopy(predict.demography))
     except Exception as err:
