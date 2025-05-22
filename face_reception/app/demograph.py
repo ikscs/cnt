@@ -47,6 +47,7 @@ RETURNING face_uuid, {schema}.get_engine(file_uuid) AS engine;
         if not res: break
         face_uuid = res[0]
         engine = res[1].get('demography') if res[1] else None
+        face_width_px = res[1].get('face_width_px', 0) if res[1] else 0
         conn.commit()
         if not engine:
             continue
@@ -62,6 +63,11 @@ RETURNING face_uuid, {schema}.get_engine(file_uuid) AS engine;
         files = {'f': (face_uuid, face_data, 'application/octet-stream')}
 
         data = engine['param'] if engine['param'] else {}
+        if data.get('area'):
+            data['area'] = max((data['area'], face_width_px))
+        else:
+            data['area'] = face_width_px
+
         url = f"{engine['entry_point']}/demography.json"
 
         try:

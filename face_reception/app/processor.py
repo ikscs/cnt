@@ -32,18 +32,22 @@ def main():
     schema = os.environ['POSTGRES_SCHEMA']
 
     sql1 = f'''
-UPDATE {schema}.incoming SET faces_cnt=-1
-WHERE file_uuid=(
+WITH one_row AS (
 SELECT file_uuid FROM {schema}.incoming
 WHERE faces_cnt IS NULL ORDER BY ts ASC LIMIT 1
-) RETURNING file_uuid, {schema}.get_engine(file_uuid) AS engine;
+)
+UPDATE {schema}.incoming SET faces_cnt=-1
+WHERE file_uuid IN (SELECT file_uuid FROM one_row)
+RETURNING file_uuid, {schema}.get_engine(file_uuid) AS engine;
 '''
+
     while True:
         cur.execute(sql1)
         res = cur.fetchone()
         if not res: break
         file_uuid = res[0]
         engine = res[1].get('embedding') if res[1] else None
+        face_width_px = res[1].get('face_width_px', 0) if res[1] else 0
         conn.commit()
         if not engine:
             continue
@@ -59,6 +63,11 @@ WHERE faces_cnt IS NULL ORDER BY ts ASC LIMIT 1
         files = {'f': (file_uuid, file_data, 'application/octet-stream')}
 
         data = engine['param'] if engine['param'] else {}
+        if data.get('area'):
+            data['area'] = max((data['area'], face_width_px))
+        else:
+            data['area'] = face_width_px
+
         data['fmt'] = 'json'
         data['backend'] = engine['backend']
         data['model'] = engine['model']
