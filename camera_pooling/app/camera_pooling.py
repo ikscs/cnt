@@ -21,6 +21,14 @@ ORIGIN_VENDOR = 'Hikvision'
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
+def get_dict_value(src, *keys):
+    result = src
+    for key in keys:
+        result = result.get(key)
+        if result == None:
+            break
+    return result
+
 def run_job(credentials, origin, last_dt, params):
     logging.info(f"Running periodic task for {origin} from {last_dt}")
     camera = Camera(credentials)
@@ -56,7 +64,8 @@ def run_job(credentials, origin, last_dt, params):
     end_time = now #Default end date
 
     res = camera.make_ISAPI_request('/ISAPI/ContentMgmt/search', data=data)
-    mtl = res['CMSearchResult']['matchList']
+    #mtl = res['CMSearchResult']['matchList']
+    mtl = get_dict_value(res, 'CMSearchResult', 'matchList')
 
     if not mtl:
         return 0, end_time
@@ -73,7 +82,11 @@ def run_job(credentials, origin, last_dt, params):
     for n, e in enumerate(result):
         if isinstance(e, str):
             break
-        url = e['mediaSegmentDescriptor']['playbackURI']
+        #url = e['mediaSegmentDescriptor']['playbackURI']
+        url = get_dict_value(e, 'mediaSegmentDescriptor', 'playbackURI')
+        if not url:
+            continue
+
         url = camera.change_url(url)
 
         camera.parse_media_url(url)
