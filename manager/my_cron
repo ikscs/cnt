@@ -5,3 +5,5 @@
 30 1 * * * curl -s -X POST -d "size=+100k&days=+5" http://kv_db:5000/erase >> /var/log/task.log 2>&1
 40 1 * * * curl -s -X POST -d "size=+1k&days=+45" http://kv_db:5000/erase >> /var/log/task.log 2>&1
 */5 * * * * /app/get_order.py
+
+15 0 * * * /app/update_osd.py
