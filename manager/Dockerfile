@@ -12,9 +12,13 @@ RUN pip install -r requirements.txt
 
 RUN chmod +x *.py
 
-COPY my_cron /etc/cron.d/my_cron
+COPY my_cron ./2.tmp
+COPY .env ./1.tmp
 
-RUN chmod 0644 /etc/cron.d/my_cron \
-    && crontab /etc/cron.d/my_cron
+RUN cat 1.tmp 2.tmp > /etc/cron.d/my_cron && \
+    chmod 0644 /etc/cron.d/my_cron && \
+    crontab /etc/cron.d/my_cron
+
+RUN rm -rf *.tmp
 
 CMD ["cron", "-f"]
