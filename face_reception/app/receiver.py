@@ -37,8 +37,8 @@ class PgDb():
         )
         self.cursor = self.conn.cursor()
 
-        self.sql_insert_incoming_with_ts = f"INSERT INTO {self.schema}.incoming (file_uuid, origin, title, filename, ts) VALUES(%s, %s, %s, %s, %s) ON CONFLICT (file_uuid) DO NOTHING"
-        self.sql_insert_incoming_without_ts = f"INSERT INTO {self.schema}.incoming (file_uuid, origin, title, filename) VALUES(%s, %s, %s, %s) ON CONFLICT (file_uuid) DO NOTHING"
+        self.sql_insert_incoming_with_ts = f"INSERT INTO {self.schema}.incoming (file_uuid, origin, origin_id, title, filename, ts) VALUES(%s, %s, {self.schema}.get_id_by_origin(%s), %s, %s, %s) ON CONFLICT (file_uuid) DO NOTHING"
+        self.sql_insert_incoming_without_ts = f"INSERT INTO {self.schema}.incoming (file_uuid, origin, origin_id, title, filename) VALUES(%s, %s, {self.schema}.get_id_by_origin(%s), %s, %s) ON CONFLICT (file_uuid) DO NOTHING"
 
         fields = ', '.join(self.event_keys)
         vars_cnt = ','.join(['%s']*len(self.event_keys))
@@ -87,10 +87,10 @@ async def upload_json(
 
     if ts:
         sql = db.sql_insert_incoming_with_ts
-        data = [file_uuid, origin, title, f.filename, ts]
+        data = [file_uuid, origin, origin, title, f.filename, ts]
     else:
         sql = db.sql_insert_incoming_without_ts
-        data = [file_uuid, origin, title, f.filename]
+        data = [file_uuid, origin, origin, title, f.filename]
 
     db.cursor.execute(sql, data)
     db.close()
