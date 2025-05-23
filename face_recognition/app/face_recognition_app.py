@@ -14,7 +14,6 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 predict = Predict()
 
 body = '<form action="represent.json" method="POST" enctype="multipart/form-data">'
-
 body += '''
   <input type="radio" id="img" name="fmt" value="img" checked /><label for="img">Image</label><br>
   <input type="radio" id="jsn" name="fmt" value="json"/><label for="jsn">JSON</label><br>
@@ -30,6 +29,13 @@ body += '''
   <input type='file' name='f'><br>
   <input type='hidden' name='area' value='40'>
   <input type='submit' value='Demography'>
+</form>
+'''
+
+body += '<hr><form action="demo_person.json" method="POST" enctype="multipart/form-data">'
+body += '''
+  <input type='file' name='f'><br>
+  <input type='submit' value='Demography one person'>
 </form>
 '''
 
@@ -105,7 +111,8 @@ async def represent_json(
 @app.post('/demography.json')
 async def demography_json(
     f: UploadFile = File(...),
-    area: int = Form(...)
+    area: int = Form(...),
+    detect_face: bool = Form(True)
 ):
 
     try:
@@ -114,28 +121,50 @@ async def demography_json(
         return JSONResponse(content={"error": str(err)}, status_code=400)
 
     try:
-        image = Image.open(io.BytesIO(file_bytes))
+        image_fr = face_recognition.load_image_file(io.BytesIO(file_bytes))
+    except Exception as err:
+        return JSONResponse(content={"error": str(err)}, status_code=400)
+
+    objs = []
+    if detect_face:
+        try:
+            faces_data = face_recognition.face_locations(image_fr)
+            for top, right, bottom, left in faces_data:
+                if right-left < area:
+                    continue
+                predict.process_image(image_fr[top:bottom, left:right])
+                objs.append(deepcopy(predict.demography))
+        except Exception as err:
+            print(str(err))
+            objs = []
+    else:
+        try:
+            predict.process_image(image_fr)
+            objs.append(predict.demography)
+        except Exception as err:
+            print(str(err))
+            objs = []
+
+    return JSONResponse(content=convert_numpy(objs))
+
+@app.post('/demo_person.json')
+async def demo_person_json(
+    f: UploadFile = File(...)
+):
+
+    try:
+        file_bytes = await f.read()
     except Exception as err:
         return JSONResponse(content={"error": str(err)}, status_code=400)
 
     try:
-        image_fr = face_recognition.load_image_file(io.BytesIO(file_bytes))
-        faces_data = face_recognition.face_locations(image_fr)
+        image = face_recognition.load_image_file(io.BytesIO(file_bytes))
     except Exception as err:
-        pass
+        return JSONResponse(content={"error": str(err)}, status_code=400)
 
-    objs = []
-    try:
-        for top, right, bottom, left in faces_data:
-            if right-left < area:
-                continue
-            predict.process_image(image_fr[top:bottom, left:right])
-            objs.append(deepcopy(predict.demography))
-    except Exception as err:
-        print(str(err))
-        objs = []
+    predict.process_image(image)
 
-    return JSONResponse(content=convert_numpy(objs))
+    return JSONResponse(content=predict.demography)
 
 def convert_numpy(obj):
     if isinstance(obj, dict):
