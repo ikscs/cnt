@@ -156,13 +156,12 @@ def main():
     sql_jobs = f"""
 SELECT o.point_id, o.id, o.origin, o.credentials, s.poling_period_s, t.params
 FROM {schema}.origin o
-LEFT JOIN {schema}.origin_schedule s using(id)
+LEFT JOIN {schema}.origin_schedule s ON o.id=s.origin_id
 LEFT JOIN {schema}.origin_type t using(origin_type_id)
 WHERE
 t.protocol = '{ORIGIN_PROTOCOL}'
 AND t.vendor = '{ORIGIN_VENDOR}'
-AND o.is_enabled
-AND s.is_enabled
+AND o.is_enabled AND s.is_enabled
 AND CURRENT_TIME between start_time AND end_time
 AND NOW() >= next_dt
 ORDER BY next_dt ASC
@@ -172,18 +171,17 @@ LIMIT 1
 #    sql_last_dt = f"SELECT ts FROM {schema}.incoming WHERE origin=%s ORDER BY ts DESC LIMIT 1"
     sql_last_dt = f"SELECT {schema}.get_last_dt(%s)"
 
-    sql_next = f"UPDATE {schema}.origin_schedule SET next_dt=NOW()+INTERVAL '%s SECOND' WHERE id=%s"
+    sql_next = f"UPDATE {schema}.origin_schedule SET next_dt=NOW()+INTERVAL '%s SECOND' WHERE origin_id=%s"
 
     sql_seconds = f"""
 SELECT EXTRACT(EPOCH FROM s.next_dt - NOW())::INT AS seconds_until_next
 FROM {schema}.origin o
-LEFT JOIN {schema}.origin_schedule s using(id)
+LEFT JOIN {schema}.origin_schedule s ON o.id=s.origin_id
 LEFT JOIN {schema}.origin_type t using(origin_type_id)
 WHERE
 t.protocol = '{ORIGIN_PROTOCOL}'
 AND t.vendor = '{ORIGIN_VENDOR}'
-AND o.is_enabled
-AND s.is_enabled
+AND o.is_enabled AND s.is_enabled
 AND CURRENT_TIME between start_time AND end_time
 AND NOW() < next_dt
 ORDER BY next_dt ASC
