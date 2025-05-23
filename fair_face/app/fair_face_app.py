@@ -112,9 +112,9 @@ async def represent_json(
 @app.post('/demography.json')
 async def demography_json(
     f: UploadFile = File(...),
-    area: int = Form(...)
+    area: int = Form(...),
+    detect_face: bool = Form(True)
 ):
-
     try:
         file_bytes = await f.read()
     except Exception as err:
@@ -125,27 +125,35 @@ async def demography_json(
     except Exception as err:
         return JSONResponse(content={"error": str(err)}, status_code=400)
 
-    try:
-        image_fr = face_recognition.load_image_file(io.BytesIO(file_bytes))
-        faces_data = face_recognition.face_locations(image_fr)
-    except Exception as err:
-        pass
-
     objs = []
-    try:
-        for top, right, bottom, left in faces_data:
-            if right-left < area:
-                continue
-            predict.process_image(image_fr[top:bottom, left:right])
-            objs.append(deepcopy(predict.demography))
-    except Exception as err:
-        print(str(err))
-        objs = []
+    if detect_face:
+        try:
+            image_fr = face_recognition.load_image_file(io.BytesIO(file_bytes))
+            faces_data = face_recognition.face_locations(image_fr)
+        except Exception as err:
+           pass
+
+        try:
+            for top, right, bottom, left in faces_data:
+                if right-left < area:
+                    continue
+                predict.process_image(image_fr[top:bottom, left:right])
+                objs.append(deepcopy(predict.demography))
+        except Exception as err:
+            print(str(err))
+            objs = []
+    else:
+        try:
+            predict.process_image(image)
+            objs.append(predict.demography)
+        except Exception as err:
+            print(str(err))
+            objs = []
 
     return JSONResponse(content=objs)
 
 @app.post('/demo_person.json')
-async def demography1_json(
+async def demo_person_json(
     f: UploadFile = File(...)
 ):
 
