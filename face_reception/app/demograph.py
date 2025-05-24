@@ -49,7 +49,7 @@ WHERE demography IS NULL ORDER BY ts ASC LIMIT 1
 UPDATE face_data d SET demography='{{}}', time_slot=get_time_slot(r.time_period, r.ts)
 FROM one_row AS r
 WHERE r.face_uuid = d.face_uuid
-RETURNING face_uuid, get_engine(file_uuid) AS engine;
+RETURNING r.face_uuid, get_engine(file_uuid) AS engine;
 '''
 
     while True:
