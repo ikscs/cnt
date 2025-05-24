@@ -119,7 +119,7 @@ async def demography_json(
 
     actions = [e.strip() for e in actions.split(',') if e]
     try:
-        objs = DeepFace.analyze(img_path=query_image, detector_backend=backend, actions=actions, silent=True)
+        objs = DeepFace.analyze(img_path=query_image, detector_backend=backend, actions=actions, silent=True, enforce_detection=False)
     except Exception as err:
         print(str(err))
         objs = []
