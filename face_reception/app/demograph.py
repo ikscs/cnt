@@ -53,8 +53,8 @@ RETURNING face_uuid, get_engine(file_uuid) AS engine;
 '''
 
     while True:
-        cur.execute(sql1)
-        res = cur.fetchone()
+        db.cursor.execute(sql1)
+        res = db.cursor.fetchone()
         if not res: break
         face_uuid = res[0]
         engine = res[1].get('demography') if res[1] else None
@@ -100,7 +100,7 @@ RETURNING face_uuid, get_engine(file_uuid) AS engine;
         if data:
 
             sql = f'UPDATE face_data SET demography=%s WHERE face_uuid = %s;'
-            cur.execute(sql, [json.dumps(data[0]), face_uuid])
+            db.cursor.execute(sql, [json.dumps(data[0]), face_uuid])
             db.conn.commit()
 
             try:
