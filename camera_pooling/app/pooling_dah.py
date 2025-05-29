@@ -48,7 +48,8 @@ def dah_runner(credentials, origin, last_dt, params):
             title[param] = {'0': None, '1': False, '2': True}.get(title[param])
 
         if image_name:
-            end_time = get_dict_value(e, 'event_time')
+            #end_event = get_dict_value(e, 'event_time')
+            end_time = get_dict_value(e, 'end_time')
             content = camera.get_media(image_name)
             image_name = image_name.split('=')[-1]
             se.checkin(origin, json.dumps(title), image_name, content, end_time)
