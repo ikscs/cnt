@@ -52,7 +52,7 @@ RETURNING r.face_uuid, get_engine(file_uuid) AS engine;
             continue
 
         file_data = BytesIO(content)
-        files = {'f': (face_uuid, face_data, 'application/octet-stream')}
+        files = {'f': (face_uuid, file_data, 'application/octet-stream')}
 
         data = engine['param'] if engine['param'] else {}
         if data.get('area'):
