@@ -1,108 +1,96 @@
 #!/usr/bin/python3
 import os
 import sys
-import requests
 import uuid
 import json
 from io import BytesIO
 from PIL import Image, ImageFile
+import subprocess
+
 from run_once import run_once
+from db_wrapper import DB
+from service_exchange import Service_exchange
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
-
-import subprocess
-import psycopg2
-#from dotenv import load_dotenv
 
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 DEMOGRAPHY_SCRIPT = DIR_PATH + "/demograph.py"
 
-kv_db_url = 'http://kv_db:5000'
-
 def main():
-    conn = psycopg2.connect(
-        host=os.environ['POSTGRES_HOST'],
-        port=os.environ.get('POSTGRES_PORT'),
-        user=os.environ['POSTGRES_USER'],
-        password=os.environ['POSTGRES_PASSWORD'],
-        dbname=os.environ['POSTGRES_DB']
-    )
+    se = Service_exchange()
+    db = DB()
+    db.open()
 
-    cur = conn.cursor()
-    schema = os.environ['POSTGRES_SCHEMA']
-
-    sql1 = f'''
+    sql_target = '''
 WITH one_row AS (
-SELECT file_uuid FROM {schema}.incoming
-WHERE faces_cnt IS NULL ORDER BY ts ASC LIMIT 1
+SELECT file_uuid FROM incoming
+WHERE faces_cnt IS NULL
+ORDER BY ts ASC LIMIT 1
 )
-UPDATE {schema}.incoming SET faces_cnt=-1
+UPDATE incoming SET faces_cnt=-1
 WHERE file_uuid IN (SELECT file_uuid FROM one_row)
-RETURNING file_uuid, {schema}.get_engine(file_uuid) AS engine;
+RETURNING file_uuid, get_engine(file_uuid) AS engine, title;
 '''
+    sql_insert = "INSERT INTO face_data (face_uuid, file_uuid, face_idx, embedding, facial_area, confidence, demography) VALUES(%s, %s, %s, %s, %s, %s, %s) ON CONFLICT (face_uuid) DO NOTHING"
+    sql_update = "UPDATE incoming SET faces_cnt=%s WHERE file_uuid=%s"
 
     while True:
-        cur.execute(sql1)
-        res = cur.fetchone()
+        db.cursor.execute(sql_target)
+        res = db.cursor.fetchone()
         if not res: break
+
         file_uuid = res[0]
-        engine = res[1].get('embedding') if res[1] else None
+        engine_embedding = res[1].get('embedding') if res[1] else None
+        engine_demography = res[1].get('demography') if res[1] else None
+        engine_detection = res[1].get('face_detection') if res[1] else None
         face_width_px = res[1].get('face_width_px', 0) if res[1] else 0
-        conn.commit()
-        if not engine:
+        title = res[2]
+        db.conn.commit()
+
+        if not engine_embedding:
             continue
 
-        try:
-            r = requests.get(f"{kv_db_url}/get/{file_uuid}")
-            r.raise_for_status()
-        except Exception as err:
-            print('Download img: ', err)
+        demography = None
+        if not engine_demography:
+            try:
+                demography = json.loads(title)
+            except Exception as e:
+                pass
+
+        content = get_img(file_uuid)
+        if not content:
             continue
 
-        file_data = BytesIO(r.content)
+        file_data = BytesIO(content)
         files = {'f': (file_uuid, file_data, 'application/octet-stream')}
 
-        data = engine['param'] if engine['param'] else {}
+        data = engine_embedding['param'] if engine_embedding['param'] else {}
         if data.get('area'):
             data['area'] = max((data['area'], face_width_px))
         else:
             data['area'] = face_width_px
 
         data['fmt'] = 'json'
-        data['backend'] = engine['backend']
-        data['model'] = engine['model']
-        url = f"{engine['entry_point']}/represent.json"
+        data['backend'] = engine_embedding['backend']
+        data['model'] = engine_embedding['model']
+        url = f"{engine_embedding['entry_point']}/represent.json"
 
-        try:
-            response = requests.post(url, data=data, files=files)
-        except Exception as err:
-            print('Engine error: ', err)
+        data = se.post_engine(url, data, files)
+        if not data:
             break
 
-        if response.status_code != 200:
-            print(f'{url} status_code: ', response.status_code)
-            break
+        file_data.seek(0)
+        image = Image.open(file_data)
 
-        try:
-            data = response.json()
-        except Exception as err:
-            print(err)
-            break
-
-        if data:
-            file_data.seek(0)
-            image = Image.open(file_data)
-
-        sql = f"INSERT INTO {schema}.face_data (face_uuid, file_uuid, face_idx, embedding, facial_area, confidence) VALUES(%s, %s, %s, %s, %s, %s) ON CONFLICT (face_uuid) DO NOTHING"
         face_idx = 0
         for face_idx, row in enumerate(data, 1):
             if row['face_confidence'] == 0:
                 face_idx = 0
                 break
             face_uuid = uuid.uuid4().hex
-            values = (face_uuid, file_uuid, face_idx, row['embedding'], json.dumps(row['facial_area']), row['face_confidence'])
-            cur.execute(sql, values)
-            conn.commit()
+            values = (face_uuid, file_uuid, face_idx, row['embedding'], json.dumps(row['facial_area']), row['face_confidence'], demography)
+            db.cursor.execute(sql_insert, values)
+            db.conn.commit()
 
             delta_x = 25 * row['facial_area']['w'] / 100
             delta_y = 25 * row['facial_area']['h'] / 100
@@ -112,12 +100,8 @@ RETURNING file_uuid, {schema}.get_engine(file_uuid) AS engine;
             img.save(buffer, format='JPEG')
             buffer.seek(0)
 
-            headers = {"Content-Type": "application/octet-stream"}
-
-            try:
-                response = requests.post(f"{kv_db_url}/set/{face_uuid}", headers=headers, data=buffer)
-            except Exception as err:
-                print('Upload img: ', err)
+            content = set_img(face_uuid, buffer)
+            if not content:
                 break
 
             try:
@@ -127,13 +111,12 @@ RETURNING file_uuid, {schema}.get_engine(file_uuid) AS engine;
             except Exception as e:
                 print(str(e))
 
-        sql = f"UPDATE {schema}.incoming SET faces_cnt={face_idx} WHERE file_uuid = '{file_uuid}'"
-        cur.execute(sql)
-        conn.commit()
+        db.cursor.execute(sql_update, (face_idx, file_uuid))
+        db.conn.commit()
 
-    cur.close()
-    conn.close()
+    db.close()
 
 if __name__ == "__main__":
+#    from dotenv import load_dotenv
 #    load_dotenv()
     run_once(main)

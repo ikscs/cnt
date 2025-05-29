@@ -1,14 +1,14 @@
 import os
 import sys
 import uuid
-import psycopg2
-import requests
 import subprocess
 
 from fastapi import FastAPI, Form, File, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel
 from typing import List, Optional
+
+from service_exchange import Service_exchange
 
 class Event_record(BaseModel):
     origin: str
@@ -19,35 +19,20 @@ class Event_record(BaseModel):
 #from dotenv import load_dotenv
 #load_dotenv()
 
-KV_DB_URL = 'http://kv_db:5000'
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 PROCESSOR_SCRIPT = DIR_PATH + "/processor.py"
 
-class PgDb():
+class custom_SQL():
     event_keys = ['origin', 'ts', 'prefix', 'name']
 
     def __init__(self):
-        self.schema = os.environ['POSTGRES_SCHEMA']
-        self.conn = psycopg2.connect(
-            host=os.environ['POSTGRES_HOST'],
-            port=os.environ.get('POSTGRES_PORT'),
-            user=os.environ['POSTGRES_USER'],
-            password=os.environ['POSTGRES_PASSWORD'],
-            dbname=os.environ['POSTGRES_DB']
-        )
-        self.cursor = self.conn.cursor()
-
-        self.sql_insert_incoming_with_ts = f"INSERT INTO {self.schema}.incoming (file_uuid, origin, origin_id, title, filename, ts) VALUES(%s, %s, {self.schema}.get_id_by_origin(%s), %s, %s, %s) ON CONFLICT (file_uuid) DO NOTHING"
-        self.sql_insert_incoming_without_ts = f"INSERT INTO {self.schema}.incoming (file_uuid, origin, origin_id, title, filename) VALUES(%s, %s, {self.schema}.get_id_by_origin(%s), %s, %s) ON CONFLICT (file_uuid) DO NOTHING"
+        self.sql_insert_incoming_with_ts = f"INSERT INTO incoming (file_uuid, origin, origin_id, title, filename, ts) VALUES(%s, %s, get_id_by_origin(%s), %s, %s, %s) ON CONFLICT (file_uuid) DO NOTHING"
+        self.sql_insert_incoming_without_ts = f"INSERT INTO incoming (file_uuid, origin, origin_id, title, filename) VALUES(%s, %s, get_id_by_origin(%s), %s, %s) ON CONFLICT (file_uuid) DO NOTHING"
 
         fields = ', '.join(self.event_keys)
         vars_cnt = ','.join(['%s']*len(self.event_keys))
-        self.sql_insert_event = f"INSERT INTO {self.schema}.event_crossline ({fields}) VALUES({vars_cnt}) ON CONFLICT ({fields}) DO NOTHING"
+        self.sql_insert_event = f"INSERT INTO event_crossline ({fields}) VALUES({vars_cnt}) ON CONFLICT ({fields}) DO NOTHING"
 
-    def close(self):
-        self.conn.commit()
-        self.cursor.close()
-        self.conn.close()
 
 app = FastAPI()
 
@@ -79,17 +64,20 @@ async def upload_json(
     file_uuid = uuid.uuid4().hex
     contents = await f.read()
 
-    headers = {"Content-Type": "application/octet-stream"}
-    response = requests.post(f"{KV_DB_URL}/set/{file_uuid}", headers=headers, data=contents)
-#    print(response.text)
+    se = Service_exchange()
+    content = set_img(file_uuid, contents)
+    if not content:
+        return None
 
-    db = PgDb()
+    db = DB()
+    db.open()
+    custom_sql = custom_SQL()
 
     if ts:
-        sql = db.sql_insert_incoming_with_ts
+        sql = custom_sql.sql_insert_incoming_with_ts
         data = [file_uuid, origin, origin, title, f.filename, ts]
     else:
-        sql = db.sql_insert_incoming_without_ts
+        sql = custom_sql.sql_insert_incoming_without_ts
         data = [file_uuid, origin, origin, title, f.filename]
 
     db.cursor.execute(sql, data)
@@ -109,9 +97,12 @@ async def upload_json(
     events: List[Event_record]
 ):
 
-    db = PgDb()
-    data = [[getattr(row, e, None) for e in db.event_keys] for row in events]
-    db.cursor.executemany(db.sql_insert_event, data)
+    db = DB()
+    db.open()
+    custom_sql = custom_SQL()
+
+    data = [[getattr(row, e, None) for e in custom_sql.event_keys] for row in events]
+    db.cursor.executemany(custom_sql.sql_insert_event, data)
     db.close()
 
     return JSONResponse(content={'result': 'Ok', 'count': len(data)})

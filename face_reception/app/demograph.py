@@ -1,44 +1,27 @@
 #!/usr/bin/python3
 import os
 import sys
-import requests
 import uuid
 import json
 from io import BytesIO
 from PIL import Image, ImageFile
+import subprocess
+
 from run_once import run_once
+from db_wrapper import DB
+from service_exchange import Service_exchange
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
-
-import subprocess
-import psycopg2
-#from dotenv import load_dotenv
 
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 SIMILARITY_SCRIPT = DIR_PATH + "/similarity.py"
 
-kv_db_url = 'http://kv_db:5000'
-
-class DB:
-    def open(self):
-        self.conn = psycopg2.connect(host=os.environ['POSTGRES_HOST'], port=os.environ.get('POSTGRES_PORT'),
-            user=os.environ['POSTGRES_USER'], password=os.environ['POSTGRES_PASSWORD'],
-            dbname=os.environ['POSTGRES_DB']
-        )
-        self.cursor = self.conn.cursor()
-        self.schema = os.environ['POSTGRES_SCHEMA']
-        sql = f'SET search_path = {self.schema}, "$user", public;'
-        self.cursor.execute(sql)
-
-    def close(self):
-        self.cursor.close()
-        self.conn.close()
-
 def main():
+    se = Service_exchange()
     db = DB()
     db.open()
 
-    sql1 = f'''
+    sql_target = '''
 WITH one_row AS (
 SELECT face_uuid, i.ts, p.time_period FROM face_data d
 LEFT JOIN incoming i using(file_uuid)
@@ -51,9 +34,10 @@ FROM one_row AS r
 WHERE r.face_uuid = d.face_uuid
 RETURNING r.face_uuid, get_engine(file_uuid) AS engine;
 '''
+    sql_update = 'UPDATE face_data SET demography=%s WHERE face_uuid = %s;'
 
     while True:
-        db.cursor.execute(sql1)
+        db.cursor.execute(sql_target)
         res = db.cursor.fetchone()
         if not res: break
         face_uuid = res[0]
@@ -63,14 +47,11 @@ RETURNING r.face_uuid, get_engine(file_uuid) AS engine;
         if not engine:
             continue
 
-        try:
-            r = requests.get(f"{kv_db_url}/get/{face_uuid}")
-            r.raise_for_status()
-        except Exception as err:
-            print(err)
+        content = get_img(file_uuid)
+        if not content:
             continue
 
-        face_data = BytesIO(r.content)
+        file_data = BytesIO(content)
         files = {'f': (face_uuid, face_data, 'application/octet-stream')}
 
         data = engine['param'] if engine['param'] else {}
@@ -81,26 +62,13 @@ RETURNING r.face_uuid, get_engine(file_uuid) AS engine;
 
         url = f"{engine['entry_point']}/demography.json"
 
-        try:
-            response = requests.post(url, data=data, files=files)
-        except Exception as err:
-            print(err)
-            break
-
-        if response.status_code != 200:
-            print(f'{url} status_code: ', response.status_code)
-            break
-
-        try:
-            data = response.json()
-        except Exception as err:
-            print(err)
+        data = se.post_engine(url, data, files)
+        if not data:
             break
 
         if data:
 
-            sql = f'UPDATE face_data SET demography=%s WHERE face_uuid = %s;'
-            db.cursor.execute(sql, [json.dumps(data[0]), face_uuid])
+            db.cursor.execute(sql_update, [json.dumps(data[0]), face_uuid])
             db.conn.commit()
 
             try:
@@ -111,5 +79,6 @@ RETURNING r.face_uuid, get_engine(file_uuid) AS engine;
     db.close()
 
 if __name__ == "__main__":
+#    from dotenv import load_dotenv
 #    load_dotenv()
     run_once(main)
