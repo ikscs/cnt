@@ -16,6 +16,24 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 DEMOGRAPHY_SCRIPT = DIR_PATH + "/demograph.py"
 
+def get_demography_from(title):
+    try:
+        src = json.loads(title)
+    except Exception as e:
+        return None
+    if 'age' in src:
+        if isinstance(src['age'], int):
+            pass
+        elif src['age'].isdigit():
+            src['age'] = int(src['age'])
+        else:
+            src['age'] = None
+    for k, v in {'sex': 'dominant_gender', 'nation': 'dominant_race', 'emotion': 'dominant_emotion'}.items():
+        if k in src:
+            src[v] = src[k]
+            del src[k]
+    return src
+
 def main():
     se = Service_exchange()
     db = DB()
@@ -52,12 +70,9 @@ RETURNING file_uuid, get_engine(file_uuid) AS engine, title;
 
         demography = None
         if not engine_demography:
-            try:
-                demography = json.loads(title)
-            except Exception as e:
-                pass
+            demography = get_demography_from(title)
 
-        content = get_img(file_uuid)
+        content = se.get_img(file_uuid)
         if not content:
             continue
 
@@ -88,7 +103,7 @@ RETURNING file_uuid, get_engine(file_uuid) AS engine, title;
                 face_idx = 0
                 break
             face_uuid = uuid.uuid4().hex
-            values = (face_uuid, file_uuid, face_idx, row['embedding'], json.dumps(row['facial_area']), row['face_confidence'], demography)
+            values = (face_uuid, file_uuid, face_idx, row['embedding'], json.dumps(row['facial_area']), row['face_confidence'], json.dumps(demography) if demography else None)
             db.cursor.execute(sql_insert, values)
             db.conn.commit()
 
@@ -100,7 +115,7 @@ RETURNING file_uuid, get_engine(file_uuid) AS engine, title;
             img.save(buffer, format='JPEG')
             buffer.seek(0)
 
-            content = set_img(face_uuid, buffer)
+            content = se.set_img(face_uuid, buffer)
             if not content:
                 break
 

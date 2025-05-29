@@ -29,7 +29,7 @@ LEFT JOIN origin o using(origin)
 LEFT JOIN point p using(point_id)
 WHERE demography IS NULL ORDER BY ts ASC LIMIT 1
 )
-UPDATE face_data d SET demography='{{}}', time_slot=get_time_slot(r.time_period, r.ts)
+UPDATE face_data d SET demography='{}', time_slot=get_time_slot(r.time_period, r.ts)
 FROM one_row AS r
 WHERE r.face_uuid = d.face_uuid
 RETURNING r.face_uuid, get_engine(file_uuid) AS engine;
@@ -47,7 +47,7 @@ RETURNING r.face_uuid, get_engine(file_uuid) AS engine;
         if not engine:
             continue
 
-        content = get_img(file_uuid)
+        content = se.get_img(face_uuid)
         if not content:
             continue
 

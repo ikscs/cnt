@@ -8,6 +8,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel
 from typing import List, Optional
 
+from db_wrapper import DB
 from service_exchange import Service_exchange
 
 class Event_record(BaseModel):
@@ -65,7 +66,7 @@ async def upload_json(
     contents = await f.read()
 
     se = Service_exchange()
-    content = set_img(file_uuid, contents)
+    content = se.set_img(file_uuid, contents)
     if not content:
         return None
 
