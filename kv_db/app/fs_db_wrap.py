@@ -38,6 +38,32 @@ def get_binary(key):
         return Response("Key not found", status=404)
     return Response(data, content_type="application/octet-stream")
 
+@app.route("/del/<key>", methods=["GET"])
+def del_binary(key):
+
+    try:
+        os.remove(f'{FOLDER}/{key}')
+    except Exception as err:
+        return Response("Key not found", status=404)
+
+    return Response(f"Removed: {key}", status=200)
+
+@app.route("/erase", methods=["POST"])
+def erase_binary():
+    size = request.form['size']
+    days = request.form['days']
+
+    cmd = f'find {FOLDER} -maxdepth 1 -type f -size {size} -mtime {days} -exec rm -v {{}} \\; | wc -l'
+    try:
+        result = os.popen(cmd).read()
+        result = result.strip()
+        status = 200
+    except Exception as err:
+        result = str(err)
+        status = 500
+
+    return Response(result, status=status)
+
 @app.route("/img/<key>", methods=["GET"])
 def get_img(key):
     key = key.split('.')[0]
