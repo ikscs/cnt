@@ -92,7 +92,7 @@ RETURNING file_uuid, get_engine(file_uuid) AS engine, title;
 
         data = se.post_engine(url, data, files)
         if not data:
-            break
+            continue
 
         file_data.seek(0)
         image = Image.open(file_data)
