@@ -17,7 +17,6 @@ def get_dict_value(src, *keys):
 
 def hik_runner(credentials, origin, last_dt, params):
     logging.info(f"Running periodic task for {origin} from {last_dt}")
-    return 0, None
     se = Service_exchange()
 
     camera = Camera(credentials)
@@ -116,7 +115,6 @@ def hik_runner(credentials, origin, last_dt, params):
         se.checkin(origin, title, camera.media['name'], content, ts)
 
         cnt += 1
-        break
 
     if cross_events:
         se.upload_events(cross_events)
