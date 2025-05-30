@@ -21,6 +21,23 @@ def main():
     db = DB()
     db.open()
 
+    sql_mk_time_slot = '''
+WITH many_rows AS (
+SELECT face_uuid, i.ts, p.time_period, demography FROM face_data d
+LEFT JOIN incoming i using(file_uuid)
+LEFT JOIN origin o using(origin)
+LEFT JOIN point p using(point_id)
+WHERE demography IS NOT NULL
+AND time_slot IS NULL
+ORDER BY ts ASC
+)
+UPDATE face_data d SET time_slot=get_time_slot(r.time_period, r.ts)
+FROM many_rows AS r
+WHERE r.face_uuid = d.face_uuid;
+'''
+    db.cursor.execute(sql_mk_time_slot)
+    db.conn.commit()
+
     sql_target = '''
 WITH one_row AS (
 SELECT face_uuid, i.ts, p.time_period FROM face_data d
