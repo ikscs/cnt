@@ -53,10 +53,9 @@ def erase_binary():
     size = request.form['size']
     days = request.form['days']
 
-    cmd = f'find {FOLDER} -maxdepth 1 -type f -size {size} -mtime {days} -exec rm -v {{}} \\; | wc -l'
+    cmd = f'eraser.py {size} {days}'
     try:
         result = os.popen(cmd).read()
-        result = result.strip()
         status = 200
     except Exception as err:
         result = str(err)
