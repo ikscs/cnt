@@ -24,7 +24,7 @@ DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 PROCESSOR_SCRIPT = DIR_PATH + "/processor.py"
 
 class custom_SQL():
-    event_keys = ['origin', 'ts', 'prefix', 'name']
+    event_keys = ['origin', 'origin_id', 'ts', 'prefix', 'name']
 
     def __init__(self):
         self.sql_insert_incoming_with_ts = f"INSERT INTO incoming (file_uuid, origin, origin_id, title, filename, ts) VALUES(%s, %s, %s, %s, %s, %s) ON CONFLICT (file_uuid) DO NOTHING"
