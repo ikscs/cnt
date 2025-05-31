@@ -15,7 +15,7 @@ def get_dict_value(src, *keys):
             break
     return result
 
-def hik_runner(credentials, origin, last_dt, params):
+def hik_runner(credentials, origin, origin_id, last_dt, params):
     logging.info(f"Running periodic task for {origin} from {last_dt}")
     se = Service_exchange()
 
@@ -91,7 +91,7 @@ def hik_runner(credentials, origin, last_dt, params):
 
         if 'lineCrossImage' in camera.media['name']:
             prefix, name = camera.media['name'].split('@')
-            cross_events.append({'origin': origin, 'ts': str(ts), 'prefix': prefix, 'name': name})
+            cross_events.append({'origin': origin, 'origin_id': origin_id, 'ts': str(ts), 'prefix': prefix, 'name': name})
 
         if 'min_size' in params:
             if camera.media['size'] < params['min_size']:
@@ -112,7 +112,7 @@ def hik_runner(credentials, origin, last_dt, params):
         if len(content) < params['min_size']:
             continue
 
-        se.checkin(origin, title, camera.media['name'], content, ts)
+        se.checkin(origin, origin_id, title, camera.media['name'], content, ts)
 
         cnt += 1
 
@@ -128,9 +128,10 @@ if __name__ == "__main__":
 
     credentials = dotenv_values('.env_hik')
     origin = 'sezon_FF_1'
+    origin_id = 19
     last_dt = datetime.now() + timedelta(seconds=-36000)
 
     params = {"event": "LineDetection", "max_size": 1000000, "min_size": 500000, "file_mask": "lineCrossCap"}
 
-    count, end_time = hik_runner(credentials, origin, last_dt, params)
+    count, end_time = hik_runner(credentials, origin, origin_id, last_dt, params)
     print(count, end_time)

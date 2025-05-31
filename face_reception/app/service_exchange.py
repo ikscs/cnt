@@ -12,8 +12,8 @@ class Service_exchange():
         self.OSD_URL = 'http://camera_pooling:8000/set_osd.json'
         self.KV_DB_URL = 'http://kv_db:5000'
 
-    def checkin(self, origin, title, filename, content, ts=None, origin_id=None):
-        data = {'origin': origin, 'title': title}
+    def checkin(self, origin, origin_id, title, filename, content, ts=None, origin_id=None):
+        data = {'origin': origin, 'origin_id': origin_id, 'title': title}
         if ts:
             data['ts'] = ts
         files = {'f': (filename, BytesIO(content), 'application/octet-stream')}
@@ -66,7 +66,6 @@ class Service_exchange():
 if __name__ == "__main__":
     se = Service_exchange()
 
-#    se.get_img('qqqq')
-#    with open('homer.jpg', 'rb') as f:
-#        content = f.read()
-#        se.checkin('user7@scs-analytics.com', 'Homer Simpson', 'homer', content)
+    with open('homer.jpg', 'rb') as f:
+        content = f.read()
+        se.checkin('user7@scs-analytics.com', 7, 'Homer Simpson', 'homer', content)

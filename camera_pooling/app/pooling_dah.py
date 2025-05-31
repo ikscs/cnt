@@ -15,7 +15,7 @@ def get_dict_value(src, *keys):
             break
     return result
 
-def dah_runner(credentials, origin, last_dt, params):
+def dah_runner(credentials, origin, origin_id, last_dt, params):
     logging.info(f"Running periodic task for {origin} from {last_dt}")
 
     se = Service_exchange()
@@ -52,7 +52,7 @@ def dah_runner(credentials, origin, last_dt, params):
             end_time = get_dict_value(e, 'end_time')
             content = camera.get_media(image_name)
             image_name = image_name.split('=')[-1]
-            se.checkin(origin, json.dumps(title), image_name, content, end_time)
+            se.checkin(origin, origin_id, json.dumps(title), image_name, content, end_time)
             cnt += 1
         else:
             return 0, None
@@ -66,9 +66,10 @@ if __name__ == "__main__":
 
     credentials = dotenv_values('.env_dah')
     origin = 'sezon_DAH_1'
+    origin_id = 21
     last_dt = datetime.now() + timedelta(seconds=-36000)
 
     params = None
 
-    count, end_time = dah_runner(credentials, origin, last_dt, params)
+    count, end_time = dah_runner(credentials, origin, origin_id, last_dt, params)
     print(count, end_time)

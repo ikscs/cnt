@@ -27,8 +27,7 @@ class custom_SQL():
     event_keys = ['origin', 'ts', 'prefix', 'name']
 
     def __init__(self):
-        self.sql_insert_incoming_with_ts = f"INSERT INTO incoming (file_uuid, origin, origin_id, title, filename, ts) VALUES(%s, %s, get_id_by_origin(%s), %s, %s, %s) ON CONFLICT (file_uuid) DO NOTHING"
-        self.sql_insert_incoming_without_ts = f"INSERT INTO incoming (file_uuid, origin, origin_id, title, filename) VALUES(%s, %s, get_id_by_origin(%s), %s, %s) ON CONFLICT (file_uuid) DO NOTHING"
+        self.sql_insert_incoming_with_ts = f"INSERT INTO incoming (file_uuid, origin, origin_id, title, filename, ts) VALUES(%s, %s, %s, %s, %s, %s) ON CONFLICT (file_uuid) DO NOTHING"
 
         fields = ', '.join(self.event_keys)
         vars_cnt = ','.join(['%s']*len(self.event_keys))
@@ -41,6 +40,7 @@ app = FastAPI()
 async def hello():
     body = '''<form action="upload.json" method="POST" enctype="multipart/form-data">
 <label for="origin">origin (From):</label><input type="text" id="origin" name="origin"><br>
+<label for="origin_id">origin_id:</label><input type="text" id="origin_id" name="origin_id"><br>
 <label for="title">title (Subject):</label><input type="text" id="title" name="title"><br>
 <input type='file' name='f'><br>
 <input type='submit' value='submit'>
@@ -57,6 +57,7 @@ async def hello():
 @app.post('/upload.json', response_class=HTMLResponse)
 async def upload_json(
     origin: str = Form(...),
+    origin_id: int = Form(None)
     title: str = Form(...),
     f: UploadFile = File(...),
     ts: str = Form(None)
@@ -74,12 +75,18 @@ async def upload_json(
     db.open()
     custom_sql = custom_SQL()
 
-    if ts:
-        sql = custom_sql.sql_insert_incoming_with_ts
-        data = [file_uuid, origin, origin, title, f.filename, ts]
+    sql = custom_sql.sql_insert_incoming_with_ts
+    if not ts:
+        sql = sql.replace(', ts) VALUES(%s, %s', ') VALUES(%s')
+
+    if origin_id == None:
+        origin_id = origin
+        sql = sql.replace('VALUES(%s, %s, %s', 'VALUES(%s, %s, get_id_by_origin(%s)')
+
+    if not ts:
+        data = [file_uuid, origin, origin_id, title, f.filename]
     else:
-        sql = custom_sql.sql_insert_incoming_without_ts
-        data = [file_uuid, origin, origin, title, f.filename]
+        data = [file_uuid, origin, origin_id, title, f.filename, ts]
 
     db.cursor.execute(sql, data)
     db.close()

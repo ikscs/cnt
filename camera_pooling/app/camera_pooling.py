@@ -69,7 +69,7 @@ LIMIT 1
             last_dt = res[0]
 
             try:
-                count, end_time = runners[vendor](credentials, origin, last_dt, params)
+                count, end_time = runners[vendor](credentials, origin, id, last_dt, params)
             except Exception as e:
                 logging.exception("Error while running job")
 
