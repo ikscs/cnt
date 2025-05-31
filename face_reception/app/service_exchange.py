@@ -12,7 +12,7 @@ class Service_exchange():
         self.OSD_URL = 'http://camera_pooling:8000/set_osd.json'
         self.KV_DB_URL = 'http://kv_db:5000'
 
-    def checkin(self, origin, origin_id, title, filename, content, ts=None, origin_id=None):
+    def checkin(self, origin, origin_id, title, filename, content, ts=None):
         data = {'origin': origin, 'origin_id': origin_id, 'title': title}
         if ts:
             data['ts'] = ts
