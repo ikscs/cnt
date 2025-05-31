@@ -13,6 +13,7 @@ from service_exchange import Service_exchange
 
 class Event_record(BaseModel):
     origin: str
+    origin_id: int
     ts: str
     prefix: str
     name: str
