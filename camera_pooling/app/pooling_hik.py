@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from dateutil import tz
 from service_exchange import Service_exchange
 import logging
 
@@ -19,14 +20,20 @@ def hik_runner(credentials, origin, origin_id, last_dt, params):
     logging.info(f"Running periodic task for {origin} from {last_dt}")
     se = Service_exchange()
 
+    from_zone = tz.tzutc()
+    to_zone = tz.tzlocal()
+
     camera = Camera(credentials)
     if not camera.is_connected:
         logging.error(camera.error_txt)
         return 0, None
 
-    start_time = (last_dt + timedelta(seconds=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    start_time = (last_dt + timedelta(seconds=1))
+    start_time = start_time.astimezone(from_zone)
+    start_time = start_time.strftime("%Y-%m-%dT%H:%M:%SZ")
 
     now = datetime.now()
+    now = now.astimezone(from_zone)
     end_time = (now.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     max_results = 50
@@ -79,13 +86,15 @@ def hik_runner(credentials, origin, origin_id, last_dt, params):
 
         try:
             title = e['timeSpan']['startTime']
-            ts = datetime.fromisoformat(title[:-1])
+            ts = datetime.fromisoformat(title)
+            ts = ts.astimezone(to_zone)
         except Exception as e:
             continue
 
         try:
             end_time = e['timeSpan']['endTime']
-            end_time = datetime.fromisoformat(end_time[:-1])
+            end_time = datetime.fromisoformat(end_time)
+            end_time = end_time.astimezone(to_zone)
         except Exception as e:
             continue
 
