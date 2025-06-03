@@ -2,15 +2,20 @@ services:
   django:
     build: .
     container_name: django_app
-    ports:
-      - "8090:8000"
+#    ports:
+#      - "8090:8000"
     volumes:
       - .:/app
-      - ./staticfiles:/app/staticfiles
+      - staticfiles:/app/staticfiles
     networks:
       - swag_network
     restart: always
     command: gunicorn api.wsgi:application --bind 0.0.0.0:8000
+
+volumes:
+  staticfiles:
+    external: true
+    name: linuxserver_staticfiles
 
 networks:
   swag_network:
