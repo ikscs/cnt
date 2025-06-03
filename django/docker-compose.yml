@@ -1,0 +1,18 @@
+services:
+  django:
+    build: .
+    container_name: django_app
+    ports:
+      - "8090:8000"
+    volumes:
+      - .:/app
+      - ./staticfiles:/app/staticfiles
+    networks:
+      - swag_network
+    restart: always
+    command: gunicorn api.wsgi:application --bind 0.0.0.0:8000
+
+networks:
+  swag_network:
+    driver: bridge
+    external: true
