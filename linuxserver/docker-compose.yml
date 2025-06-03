@@ -5,13 +5,14 @@ services:
     environment:
       - PUID=1000
       - PGID=1000
-      - URL={DOMAIN}
-      - EXTRA_DOMAINS={EXTRA_DOMAINS}
+      - URL=${DOMAIN}
+      - EXTRA_DOMAINS=${EXTRA_DOMAINS}
       - VALIDATION=http # Use dns for DNS validation or http for HTTP validation
       - EMAIL=${EMAIL}
       - SECRET_VALUE=${SECRET_VALUE}
     volumes:
       - ./swag/config:/config
+      - staticfiles:/staticfiles
     ports:
       - "443:443"  # HTTPS
       - "80:80"    # HTTP
@@ -31,6 +32,9 @@ services:
     depends_on:
       - swag
     restart: always
+
+volumes:
+  staticfiles:
 
 networks:
   swag_network:
