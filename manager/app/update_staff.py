@@ -32,7 +32,7 @@ if __name__ == "__main__":
     try:
         point_id = int(sys.argv[1])
     except Exception as err:
-        print(f'Wrong point_id {argv[1]}')
+        print(f'Wrong point_id {sys.argv[1]}')
         exit(1)
 
     db = DB()

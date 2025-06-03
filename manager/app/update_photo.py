@@ -26,14 +26,10 @@ class DB:
 
 if __name__ == "__main__":
     if len(sys.argv) == 1:
-        print('person_id not given')
+        print('face_uuid not given')
         exit(1)
 
-    try:
-        person_id = int(sys.argv[1])
-    except Exception as err:
-        print(f'Wrong person_id {sys.argv[1]}')
-        exit(1)
+    face_uuid = sys.argv[1]
 
     db = DB()
     db.open()
@@ -41,13 +37,13 @@ if __name__ == "__main__":
     sql = f'''
 SELECT face_uuid, photo, embedding
 FROM face_referer_data
-WHERE person_id={person_id};'''
+WHERE face_uuid='{face_uuid}';'''
 
     db.cursor.execute(sql)
     result = db.cursor.fetchall()
 
     if not result:
-        print(f'No data for person_id: {person_id}')
+        print(f'No data for face_uuid: {face_uuid}')
         db.close()
         exit(0)
 
@@ -58,7 +54,8 @@ SELECT entry_point, backend, model, param->'embedding' AS e_param FROM method
 LEFT JOIN point ON method_id=embedding_id
 LEFT JOIN person_group USING(point_id)
 LEFT JOIN person USING(group_id)
-WHERE person_id={person_id};'''
+LEFT JOIN face_referer_data USING(person_id)
+WHERE face_uuid='{face_uuid}';'''
 
     db.cursor.execute(sql)
     result1 = db.cursor.fetchone()
@@ -68,7 +65,7 @@ WHERE person_id={person_id};'''
         model = result1[2]
         e_param = result1[3]
     if not entry_point:
-        print(f'No embedding entry point for person_id: {person_id}')
+        print(f'No embedding entry point for face_uuid: {face_uuid}')
         db.close()
         exit(0)
 
@@ -123,6 +120,6 @@ WHERE person_id={person_id};'''
         db.conn.commit()
 
     res = sum(1 for e in output if e[0])
-    print(f'Person_id {person_id} updated {res}/{len(output)}')
+    print(f'{face_uuid} updated')
 
     db.close()
