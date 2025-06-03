@@ -53,6 +53,8 @@ TEMPLATES = [
     },
 ]
 
+#FORCE_SCRIPT_NAME = '/api'
+
 STATIC_URL = "/static/"
 
 STATIC_ROOT = BASE_DIR / 'staticfiles'
