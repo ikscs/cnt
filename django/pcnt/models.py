@@ -227,7 +227,7 @@ class FormTag(models.Model):
 
 class FormVersion(models.Model):
     id = models.UUIDField(primary_key=True)
-    form = models.ForeignKey(Form, models.DO_NOTHING, blank=True, null=True)
+    form = models.ForeignKey(Form, models.DO_NOTHING, blank=True, null=True, unique=True)
     version = models.IntegerField()
     config = models.JSONField(db_comment='JSON конфигурация формы, включая поля и макет')
     comment = models.TextField(blank=True, null=True)

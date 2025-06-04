@@ -39,9 +39,12 @@ router_pcnt.register(r'person', PersonViewSet)
 router_pcnt.register(r'person_group', PersonGroupViewSet)
 router_pcnt.register(r'point', PointViewSet)
 
+from .views import CallDbFunctionView
+
 urlpatterns = [
     path("api/admin/", admin.site.urls),
     path("api/pcnt/", include(router_pcnt.urls)),
+    path("api/f5", CallDbFunctionView.as_view(), name='call-db-function'),
     path("api/", include("helloworld.urls")),
 ]
 
