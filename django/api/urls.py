@@ -3,6 +3,11 @@ from django.contrib import admin
 from django.conf.urls.static import static
 from django.conf import settings
 
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+)
+
 from rest_framework.routers import DefaultRouter
 from pcnt.views import AgeViewSet, AppViewSet, BillingViewSet, BillingCostViewSet, BillingIncomeViewSet, CityViewSet, CountryViewSet, CustomerViewSet, CustomerToAppViewSet, DivisionViewSet, EventCrosslineViewSet, EventDataViewSet, FaceDataViewSet, FaceRefererDataViewSet, FaceTimeSlotViewSet, FormViewSet, FormDataViewSet, FormTagViewSet, FormVersionViewSet, IncomingViewSet, ManagerOrderViewSet, MethodViewSet, OriginViewSet, OriginScheduleViewSet, OriginTypeViewSet, OsdViewSet, PermReportViewSet, PersonViewSet, PersonGroupViewSet, PointViewSet
 
@@ -40,13 +45,19 @@ router_pcnt.register(r'person_group', PersonGroupViewSet)
 router_pcnt.register(r'point', PointViewSet)
 
 from .views import CallDbFunctionView
+from .views import HelloView
 
 urlpatterns = [
     path("api/admin/", admin.site.urls),
     path("api/pcnt/", include(router_pcnt.urls)),
     path("api/f5", CallDbFunctionView.as_view(), name='call-db-function'),
-    path("api/", include("helloworld.urls")),
+    path("api/hello/", HelloView.as_view(), name='hello'),
+    path('api/authdemo/', include('authdemo.urls')),
+    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+ #    path("api/", include("helloworld.urls")),
 ]
+
 
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

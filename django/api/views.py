@@ -1,5 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+
 from rest_framework import status
 from django.db import connections
 from django.utils.html import escape  # for sanitizing 'func' input
@@ -26,3 +28,9 @@ class CallDbFunctionView(APIView):
 
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class HelloView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response({"message": "Hello, JWT Authenticated User!"})

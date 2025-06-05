@@ -22,9 +22,17 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     'corsheaders',
     "rest_framework",
+    "rest_framework_simplejwt",
     "helloworld",
+    "authdemo",
     "pcnt",
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
+}
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',

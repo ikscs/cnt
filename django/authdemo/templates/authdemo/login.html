@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>JWT Login</title>
+</head>
+<body>
+    <h1>JWT Login Form</h1>
+
+    <form method="post">
+        {% csrf_token %}
+        <label>Username: <input type="text" name="username"></label><br>
+        <label>Password: <input type="password" name="password"></label><br>
+        <button type="submit" name="login">Login</button>
+    </form>
+
+    {% if token %}
+        <h2>Access Token</h2>
+        <form method="post">
+            {% csrf_token %}
+            <textarea name="token" rows="5" cols="80" readonly>{{ token }}</textarea><br>
+            <button type="submit" name="test_token">Check Token Validity</button>
+            <button type="submit" name="logout">Logout</button>
+        </form>
+        <p>Sent as HTTP header:</p>
+        <pre>Authorization: Bearer {{ token }}</pre>
+    {% endif %}
+
+    {% if error %}
+        <p style="color: red;"><strong>Error:</strong> {{ error }}</p>
+    {% endif %}
+
+    {% if test_result %}
+        <p><strong>Result:</strong> {{ test_result }}</p>
+    {% endif %}
+</body>
+</html>
