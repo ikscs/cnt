@@ -1,4 +1,5 @@
 #!/usr/local/bin/python
+import sys
 import os
 import requests
 import psycopg2
@@ -22,6 +23,11 @@ class DB:
         self.conn.close()
 
 if __name__ == "__main__":
+    if (len(sys.argv)>1) and (sys.argv[1] == 'reset'):
+        arg = '_reset'
+    else:
+        arg = ''
+
     db = DB()
     db.open()
 
@@ -32,7 +38,7 @@ if __name__ == "__main__":
     sql = f'INSERT INTO service_info ({fields}) VALUES({percent_s});'
 
     for url in TARGET_URLS:
-        response = requests.get(url)
+        response = requests.get(f'{url}{arg}')
         result = response.json()
         data = []
         for row in result:

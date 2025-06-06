@@ -7,4 +7,6 @@
 */5 * * * * /app/get_order.py
 
 15 0 * * * /app/update_osd.py
+
 */30 * * * * /app/get_info.py
+3 3 * * * /app/get_info.py reset
