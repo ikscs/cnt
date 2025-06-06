@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Form, File, UploadFile
+from fastapi import FastAPI, Form, File, UploadFile, Request
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 
 import json
@@ -6,6 +6,8 @@ import io
 import numpy as np
 from deepface import DeepFace
 from PIL import Image, ImageDraw, ImageFile
+
+from counter import Counter
 
 import gc
 
@@ -41,6 +43,7 @@ body += '''
 </form>
 '''
 
+counter = Counter('deep_face')
 app = FastAPI()
 
 @app.get("/", response_class=HTMLResponse)
@@ -52,8 +55,19 @@ async def hello():
     data += '</body></html>'
     return data
 
+@app.get("/info", response_class=JSONResponse)
+async def info():
+    return counter.info()
+
+@app.get("/info_reset", response_class=JSONResponse)
+async def info_reset():
+    result = counter.info()
+    counter.__init__('deep_face')
+    return result
+
 @app.post('/represent.json')
 async def represent_json(
+    request: Request,
     backend: str = Form(...),
     model: str = Form(...),
     f: UploadFile = File(...),
@@ -71,8 +85,9 @@ async def represent_json(
         image = Image.open(io.BytesIO(file_bytes))
     except Exception as err:
         return JSONResponse(content={"error": str(err)}, status_code=400)
-    query_image = np.array(image)
 
+    counter.start(request.url.path, (backend, model, fmt, confidence, area))
+    query_image = np.array(image)
     try:
         faces_data = DeepFace.represent(query_image, model_name=model, detector_backend=backend, enforce_detection=False)
     except Exception as err:
@@ -91,15 +106,19 @@ async def represent_json(
         image.save(img_byte_arr, format='JPEG')
         img_byte_arr.seek(0)
         gc.collect()
-        return StreamingResponse(img_byte_arr, media_type="image/jpeg")
+        result = StreamingResponse(img_byte_arr, media_type="image/jpeg")
 
     elif fmt == 'json':
         content = [face for face in faces_data if face['facial_area']['w'] >= area]
         gc.collect()
-        return JSONResponse(content=content)
+        result = JSONResponse(content=content)
+
+    counter.stop(request.url.path, (backend, model, fmt, confidence, area))
+    return result
 
 @app.post('/demography.json')
 async def demography_json(
+    request: Request,
     backend: str = Form(...),
     f: UploadFile = File(...),
     actions: str = Form(...),
@@ -115,9 +134,11 @@ async def demography_json(
         image = Image.open(io.BytesIO(file_bytes))
     except Exception as err:
         return JSONResponse(content={"error": str(err)}, status_code=400)
-    query_image = np.array(image)
 
     actions = [e.strip() for e in actions.split(',') if e]
+    counter.start(request.url.path, (backend, actions, area))
+    query_image = np.array(image)
+
     try:
         objs = DeepFace.analyze(img_path=query_image, detector_backend=backend, actions=actions, silent=True, enforce_detection=False)
     except Exception as err:
@@ -126,6 +147,8 @@ async def demography_json(
 
     content = [e for e in convert_numpy(objs) if e['region']['w'] >= area]
     gc.collect()
+
+    counter.stop(request.url.path, (backend, actions, area))
     return JSONResponse(content=content)
 
 def convert_numpy(obj):
