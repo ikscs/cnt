@@ -82,6 +82,7 @@ async def represent_json(
     except Exception as err:
         return JSONResponse(content={"error": str(err)}, status_code=400)
 
+    counter.start(request.url.path, (fmt, confidence, area))
     try:
         image_fr = face_recognition.load_image_file(io.BytesIO(file_bytes))
         faces_data = face_recognition.face_locations(image_fr)
@@ -89,7 +90,6 @@ async def represent_json(
         print(str(err))
         faces_data = []
 
-    counter.start(request.url.path, (fmt, confidence, area))
     if fmt == 'img':
         img = ImageDraw.Draw(image)  
         for face in faces_data:

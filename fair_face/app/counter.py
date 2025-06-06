@@ -40,10 +40,6 @@ class Counter():
         entry_idx = self.get_idx(path, params)
 
         self.start_time[entry_idx] = time.time()
-        count = self.count[entry_idx]
-        if not count:
-            count = 0
-        self.count[entry_idx] = count + 1
 
     def stop(self, path, params):
         entry_idx = self.get_idx(path, params)
@@ -55,6 +51,11 @@ class Counter():
         if t > self.max[entry_idx]:
             self.max[entry_idx] = t
         self.total[entry_idx] += t
+
+        count = self.count[entry_idx]
+        if not count:
+            count = 0
+        self.count[entry_idx] = count + 1
 
     def info(self):
         data = []
