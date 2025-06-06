@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Form, File, UploadFile
+from fastapi import FastAPI, Form, File, UploadFile, Request
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 
 import json
@@ -9,6 +9,7 @@ import face_recognition
 from PIL import Image, ImageDraw, ImageFile, ImageFont
 
 from cv2_predict import Predict
+from counter import Counter
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 predict = Predict()
@@ -39,6 +40,7 @@ body += '''
 </form>
 '''
 
+counter = Counter('face_recognition')
 app = FastAPI()
 
 @app.get("/", response_class=HTMLResponse)
@@ -50,8 +52,19 @@ async def hello():
     data += '</body></html>'
     return data
 
+@app.get("/info", response_class=JSONResponse)
+async def info():
+    return counter.info()
+
+@app.get("/info_reset", response_class=JSONResponse)
+async def info_reset():
+    result = counter.info()
+    counter.__init__('face_recognition')
+    return result
+
 @app.post('/represent.json')
 async def represent_json(
+    request: Request,
     f: UploadFile = File(...),
     fmt: str = Form(...),
     confidence: float = Form(...),
@@ -67,6 +80,8 @@ async def represent_json(
         image = Image.open(io.BytesIO(file_bytes))
     except Exception as err:
         return JSONResponse(content={"error": str(err)}, status_code=400)
+
+    counter.start(request.url.path, (fmt, confidence, area))
 
     try:
         image_fr = face_recognition.load_image_file(io.BytesIO(file_bytes))
@@ -90,7 +105,7 @@ async def represent_json(
         img_byte_arr = io.BytesIO()
         image.save(img_byte_arr, format='JPEG')
         img_byte_arr.seek(0)
-        return StreamingResponse(img_byte_arr, media_type="image/jpeg")
+        result = StreamingResponse(img_byte_arr, media_type="image/jpeg")
 
     elif fmt == 'json':
         encodings = face_recognition.face_encodings(image_fr, known_face_locations=faces_data)
@@ -105,11 +120,14 @@ async def represent_json(
             if landmark["w"] < area:
                 continue
             data.append({"embedding": encoding, "facial_area": landmark, "face_confidence": 1})
+        result = JSONResponse(content=convert_numpy(data))
 
-        return JSONResponse(content=convert_numpy(data))
+    counter.stop(request.url.path, (fmt, confidence, area))
+    return result
 
 @app.post('/demography.json')
 async def demography_json(
+    request: Request,
     f: UploadFile = File(...),
     area: int = Form(...),
     detect_face: bool = Form(True)
@@ -125,6 +143,7 @@ async def demography_json(
     except Exception as err:
         return JSONResponse(content={"error": str(err)}, status_code=400)
 
+    counter.start(request.url.path, (area, detect_face))
     objs = []
     if detect_face:
         try:
@@ -145,10 +164,14 @@ async def demography_json(
             print(str(err))
             objs = []
 
-    return JSONResponse(content=convert_numpy(objs))
+    result = JSONResponse(content=convert_numpy(objs))
+    counter.stop(request.url.path, (area, detect_face))
+
+    return result
 
 @app.post('/demo_person.json')
 async def demo_person_json(
+    request: Request,
     f: UploadFile = File(...)
 ):
 
@@ -162,7 +185,9 @@ async def demo_person_json(
     except Exception as err:
         return JSONResponse(content={"error": str(err)}, status_code=400)
 
+    counter.start(request.url.path, None)
     predict.process_image(image)
+    counter.stop(request.url.path, None)
 
     return JSONResponse(content=predict.demography)
 
