@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import time
 
 class AutoDict(dict):
@@ -32,7 +32,7 @@ class Counter():
             self.min[entry_idx] = float('inf')
             self.max[entry_idx] = 0
             self.total[entry_idx] = 0
-            self.from_time[entry_idx] = datetime.now()
+            self.from_time[entry_idx] = datetime.now(timezone.utc)
 
         return entry_idx
 
