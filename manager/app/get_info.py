@@ -5,7 +5,7 @@ import requests
 import psycopg2
 import json
 
-TARGET_URLS = ['http://fair_face:8000/info', ]
+TARGET_URLS = ['http://deep_face:8000/info', 'http://face_recognition:8000/info', 'http://fair_face:8000/info', ]
 
 class DB:
     def open(self):
