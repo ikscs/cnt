@@ -9,6 +9,11 @@ environ.Env.read_env()
 SECRET_KEY = env('SECRET_KEY')
 DEBUG = env('DEBUG')
 
+USERFRONT_PUBLIC_KEY = {
+#    "cnt": env('USERFRONT_PUBLIC_KEY_CNT'),
+    "cnt": 'USERFRONT_PUBLIC_KEY_CNT',
+}
+
 ALLOWED_HOSTS = ["*"]
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
@@ -31,6 +36,7 @@ INSTALLED_APPS = [
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'authdemo.authentication.UserfrontJWTAuthentication',
     )
 }
 

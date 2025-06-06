@@ -4,6 +4,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+
 # Login form view
 def login_form(request):
     token = None
@@ -54,7 +55,12 @@ def login_form(request):
 
 
 # Protected view to test token validity
+#@api_view(['GET'])
+#@permission_classes([IsAuthenticated])
+#def protected_view(request):
+#    return Response({'message': f"Hello, {request.user.username}! Token is valid."})
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def protected_view(request):
-    return Response({'message': f"Hello, {request.user.username}! Token is valid."})
+    return Response({'message': f'Hello, {request.user} — your token is valid!'})
