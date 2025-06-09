@@ -63,6 +63,20 @@ def erase_binary():
 
     return Response(result, status=status)
 
+@app.route("/cleanup", methods=["POST"])
+def cleanup_storage():
+    size = request.form['size']
+
+    cmd = f'cleanup.py {size}'
+    try:
+        result = os.popen(cmd).read()
+        status = 200
+    except Exception as err:
+        result = str(err)
+        status = 500
+
+    return Response(result, status=status)
+
 @app.route("/img/<key>", methods=["GET"])
 def get_img(key):
     key = key.split('.')[0]
