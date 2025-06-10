@@ -10,6 +10,7 @@ from rest_framework_simplejwt.views import (
 
 from rest_framework.routers import DefaultRouter
 from pcnt.views import AgeViewSet, AppViewSet, BillingViewSet, BillingCostViewSet, BillingIncomeViewSet, CityViewSet, CountryViewSet, CustomerViewSet, CustomerToAppViewSet, DivisionViewSet, EventCrosslineViewSet, EventDataViewSet, FaceDataViewSet, FaceRefererDataViewSet, FaceTimeSlotViewSet, FormViewSet, FormDataViewSet, FormTagViewSet, FormVersionViewSet, IncomingViewSet, ManagerOrderViewSet, MethodViewSet, OriginViewSet, OriginScheduleViewSet, OriginTypeViewSet, OsdViewSet, PermReportViewSet, PersonViewSet, PersonGroupViewSet, PointViewSet
+from pcnt.views import ParamViewSet
 
 router_pcnt = DefaultRouter()
 
@@ -43,6 +44,7 @@ router_pcnt.register(r'perm_report', PermReportViewSet)
 router_pcnt.register(r'person', PersonViewSet)
 router_pcnt.register(r'person_group', PersonGroupViewSet)
 router_pcnt.register(r'point', PointViewSet)
+router_pcnt.register(r'param', ParamViewSet)
 
 from .views import CallDbFunctionView
 from .views import HelloView

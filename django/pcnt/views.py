@@ -125,3 +125,10 @@ class PointViewSet(viewsets.ModelViewSet):
     queryset = Point.objects.all()
     serializer_class = PointSerializer
 
+from .models import Param
+
+from .serializers import ParamSerializer
+
+class ParamViewSet(viewsets.ModelViewSet):
+    queryset = Param.objects.all()
+    serializer_class = ParamSerializer

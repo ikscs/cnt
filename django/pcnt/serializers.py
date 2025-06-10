@@ -154,3 +154,9 @@ class PointSerializer(serializers.ModelSerializer):
         model = Point
         fields = '__all__'
 
+from .models import Param
+
+class ParamSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Param
+        fields = '__all__'

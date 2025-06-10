@@ -399,3 +399,23 @@ class Point(models.Model):
         managed = False
         db_table = 'point'
         db_table_comment = 'Елемент інфраструктури клієнта/корпорації\r\nto do\r\nприцепить клиент страна регион город'
+
+class Param(models.Model):
+    name = models.CharField(unique=True, max_length=255)
+    group_name = models.TextField()
+    datatype = models.CharField(max_length=50)
+    view_order = models.IntegerField()
+    eu = models.TextField(blank=True, null=True)
+    display_label = models.TextField()
+    display_type = models.TextField()
+    enum_values = models.TextField(blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
+    value = models.JSONField()
+    enabled = models.BooleanField()
+    created_at = models.DateTimeField(blank=True, null=True)
+    updated_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'param'
+
