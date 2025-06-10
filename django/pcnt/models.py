@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Value, Expression
 
 
 class Age(models.Model):
@@ -182,7 +183,7 @@ class FaceTimeSlot(models.Model):
 
 
 class Form(models.Model):
-    id = models.UUIDField(primary_key=True, db_comment='Уникальный идентификатор формы')
+    id = models.UUIDField(primary_key=True, db_default=Value('gen_random_uuid()', output_field=models.UUIDField()), editable=False, db_comment='Уникальный идентификатор формы')
     name = models.CharField(max_length=255, db_comment='Название формы')
     description = models.TextField(blank=True, null=True, db_comment='Описание формы')
     category = models.TextField(db_comment='Категория формы')  # This field type is a guess.
@@ -200,7 +201,7 @@ class Form(models.Model):
 
 
 class FormData(models.Model):
-    id = models.UUIDField(primary_key=True)
+    id = models.UUIDField(primary_key=True, db_default=Value('gen_random_uuid()', output_field=models.UUIDField()), editable=False,)
     form = models.ForeignKey('FormVersion', models.DO_NOTHING, to_field='form_id', blank=True, null=True, unique=True)
     version = models.IntegerField()
     data = models.JSONField(db_comment='JSON данные, собранные через форму')
@@ -212,6 +213,7 @@ class FormData(models.Model):
     class Meta:
         managed = False
         db_table = 'form_data'
+        unique_together = (('id', 'version'),)
         db_table_comment = 'Данные, собранные через формы'
 
 class FormTag(models.Model):
@@ -224,10 +226,9 @@ class FormTag(models.Model):
         db_table = 'form_tag'
         db_table_comment = 'Теги для категоризации форм'
 
-
 class FormVersion(models.Model):
     id = models.UUIDField(primary_key=True)
-    form = models.ForeignKey(Form, models.DO_NOTHING, blank=True, null=True, unique=True)
+    form = models.ForeignKey(Form, models.DO_NOTHING, blank=True, null=True)
     version = models.IntegerField()
     config = models.JSONField(db_comment='JSON конфигурация формы, включая поля и макет')
     comment = models.TextField(blank=True, null=True)
@@ -239,7 +240,6 @@ class FormVersion(models.Model):
         db_table = 'form_version'
         unique_together = (('form', 'version'),)
         db_table_comment = 'Версии форм с их конфигурацией'
-
 
 class Incoming(models.Model):
     file_uuid = models.CharField(primary_key=True)

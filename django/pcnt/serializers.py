@@ -82,6 +82,7 @@ class FormSerializer(serializers.ModelSerializer):
     class Meta:
         model = Form
         fields = '__all__'
+        read_only_fields = ['id']
 
 class FormDataSerializer(serializers.ModelSerializer):
     class Meta:
