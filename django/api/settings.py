@@ -14,6 +14,8 @@ USERFRONT_PUBLIC_KEY = {
     "cnt": 'USERFRONT_PUBLIC_KEY_CNT',
 }
 
+TENANTID = 'pn46j8wn'
+
 ALLOWED_HOSTS = ["*"]
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
@@ -35,9 +37,13 @@ INSTALLED_APPS = [
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-        'authdemo.authentication.UserfrontJWTAuthentication',
+        'pcnt.authentication.UserfrontAuthentication',
+#        'rest_framework_simplejwt.authentication.JWTAuthentication',
+#        'authdemo.authentication.UserfrontJWTAuthentication',
     )
+#    'DEFAULT_PERMISSION_CLASSES': [
+#        'rest_framework.permissions.IsAuthenticated',
+#    ],
 }
 
 MIDDLEWARE = [
