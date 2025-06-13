@@ -4,6 +4,9 @@ services:
     build: .
     volumes:
       - /var/screenshots:/var/screenshots
+      - /proc:/mnt/proc
+      - /tmp:/mnt/tmp
+      - /var/lib/postgresql:/mnt/postgresql
     env_file: ../.env
     networks:
       - swag_network

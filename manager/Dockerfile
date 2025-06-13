@@ -11,6 +11,7 @@ COPY app/. .
 RUN pip install -r requirements.txt
 
 RUN chmod +x *.py
+RUN chmod +x *.sh
 
 COPY my_cron ./2.tmp
 COPY .env ./1.tmp
