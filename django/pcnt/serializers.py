@@ -160,3 +160,15 @@ class ParamSerializer(serializers.ModelSerializer):
     class Meta:
         model = Param
         fields = '__all__'
+
+from .models import HostContainerStatus, HostDiskUsage
+
+class HostContainerStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HostContainerStatus
+        fields = '__all__'
+
+class HostDiskUsageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HostDiskUsage
+        fields = '__all__'

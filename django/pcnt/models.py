@@ -419,3 +419,23 @@ class Param(models.Model):
         managed = False
         db_table = 'param'
 
+class HostContainerStatus(models.Model):
+    host_name = models.TextField()
+    container_name = models.TextField()
+    status = models.TextField()
+    collected_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'host_container_status'
+
+class HostDiskUsage(models.Model):
+    host_name = models.TextField()
+    disk_path = models.TextField()
+    total_size_gb = models.DecimalField(max_digits=10, decimal_places=2)
+    free_space_gb = models.DecimalField(max_digits=10, decimal_places=2)
+    collected_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'host_disk_usage'

@@ -128,7 +128,24 @@ class PointViewSet(viewsets.ModelViewSet):
 from .models import Param
 
 from .serializers import ParamSerializer
+from rest_framework.permissions import IsAuthenticated
+
+#class ParamViewSet(viewsets.ModelViewSet):
+#    queryset = Param.objects.all()
+#    serializer_class = ParamSerializer
 
 class ParamViewSet(viewsets.ModelViewSet):
     queryset = Param.objects.all()
     serializer_class = ParamSerializer
+    permission_classes = [IsAuthenticated]
+
+from .models import HostContainerStatus, HostDiskUsage
+from .serializers import HostContainerStatusSerializer, HostDiskUsageSerializer
+
+class HostContainerStatusViewSet(viewsets.ModelViewSet):
+    queryset = HostContainerStatus.objects.all()
+    serializer_class = HostContainerStatusSerializer
+
+class HostDiskUsageViewSet(viewsets.ModelViewSet):
+    queryset = HostDiskUsage.objects.all()
+    serializer_class = HostDiskUsageSerializer
