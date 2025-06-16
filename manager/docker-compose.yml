@@ -7,6 +7,7 @@ services:
       - /proc:/mnt/proc
       - /tmp:/mnt/tmp
       - /var/lib/postgresql:/mnt/postgresql
+      - /var/run/docker.sock:/var/run/docker.sock
     env_file: ../.env
     networks:
       - swag_network

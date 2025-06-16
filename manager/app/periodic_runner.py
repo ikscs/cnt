@@ -50,8 +50,18 @@ def parse_du(txt, template):
         result[name] = -1
     return result
 
+def parse_regular(txt, template):
+    if not txt:
+        return {}
+    data = json.loads(txt)
+    result = dict()
+    for row in template['fields']:
+        name = row['name']
+        result[name] = data.get(name)
+    return result
+
 def main():
-    parsers = {'df': parse_df, 'du': parse_du}
+    parsers = {'df': parse_df, 'du': parse_du, './docker_metric.py': parse_regular, './procinfo.py': parse_regular, }
 
     dt = datetime.now()
     if dt.microsecond == 0:
@@ -66,6 +76,7 @@ SELECT DISTINCT ON (m.id)
 m.id, m.metric_cmd, m.metric_param, m.cron, m.template, h.collected_at
 FROM metric m
 LEFT JOIN metric_history h ON m.id = h.metric_id
+WHERE m.enable
 ORDER BY m.id, h.collected_at DESC;
 '''
 
@@ -90,8 +101,6 @@ ORDER BY m.id, h.collected_at DESC;
 
         value = json.dumps(output) if output else None
         db.cursor.execute(sql_insert, (id, value))
-
-        print()
 
     db.conn.commit()
     db.close()
