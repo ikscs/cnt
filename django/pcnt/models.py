@@ -439,3 +439,27 @@ class HostDiskUsage(models.Model):
     class Meta:
         managed = False
         db_table = 'host_disk_usage'
+
+class Metric(models.Model):
+    metric_name = models.TextField()
+    template = models.JSONField(db_comment='ключ - значение для значений параметров\r\n\r\nнапример\r\nобщий размер диска\r\nзанятый размер диска\r\nпроцент\r\nзанят картинками\r\nзанят ....\r\nзанят ....')
+    comment = models.TextField(blank=True, null=True)
+    metric_param = models.TextField(blank=True, null=True)
+    cron = models.TextField(db_comment='строка cron (пока не реализвоано) to do пока работает 1раз в 5 минут (указано в cron менеджера)')
+    enable = models.BooleanField()
+    group_name = models.TextField(blank=True, null=True)
+    sortord = models.SmallIntegerField(blank=True, null=True)
+    metric_cmd = models.TextField()
+
+    class Meta:
+        managed = False
+        db_table = 'metric'
+
+class MetricHistory(models.Model):
+    collected_at = models.DateTimeField()
+    value = models.JSONField(blank=True, null=True)
+    metric = models.ForeignKey(Metric, models.DO_NOTHING)
+
+    class Meta:
+        managed = False
+        db_table = 'metric_history'

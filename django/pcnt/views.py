@@ -149,3 +149,15 @@ class HostContainerStatusViewSet(viewsets.ModelViewSet):
 class HostDiskUsageViewSet(viewsets.ModelViewSet):
     queryset = HostDiskUsage.objects.all()
     serializer_class = HostDiskUsageSerializer
+
+from .models import Metric, MetricHistory
+from .serializers import MetricSerializer, MetricHistorySerializer
+
+class MetricViewSet(viewsets.ModelViewSet):
+    queryset = Metric.objects.all()
+    serializer_class = MetricSerializer
+
+class MetricHistoryViewSet(viewsets.ModelViewSet):
+    queryset = MetricHistory.objects.all()
+    serializer_class = MetricHistorySerializer
+

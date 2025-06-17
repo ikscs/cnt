@@ -12,6 +12,7 @@ from rest_framework.routers import DefaultRouter
 from pcnt.views import AgeViewSet, AppViewSet, BillingViewSet, BillingCostViewSet, BillingIncomeViewSet, CityViewSet, CountryViewSet, CustomerViewSet, CustomerToAppViewSet, DivisionViewSet, EventCrosslineViewSet, EventDataViewSet, FaceDataViewSet, FaceRefererDataViewSet, FaceTimeSlotViewSet, FormViewSet, FormDataViewSet, FormTagViewSet, FormVersionViewSet, IncomingViewSet, ManagerOrderViewSet, MethodViewSet, OriginViewSet, OriginScheduleViewSet, OriginTypeViewSet, OsdViewSet, PermReportViewSet, PersonViewSet, PersonGroupViewSet, PointViewSet
 from pcnt.views import ParamViewSet
 from pcnt.views import HostContainerStatusViewSet, HostDiskUsageViewSet
+from pcnt.views import MetricViewSet, MetricHistoryViewSet
 
 router_pcnt = DefaultRouter()
 
@@ -48,6 +49,8 @@ router_pcnt.register(r'point', PointViewSet)
 router_pcnt.register(r'param', ParamViewSet)
 router_pcnt.register(r'host_container_status', HostContainerStatusViewSet)
 router_pcnt.register(r'host_disk_usage', HostDiskUsageViewSet)
+router_pcnt.register(r'metric', MetricViewSet)
+router_pcnt.register(r'metric_history', MetricHistoryViewSet)
 
 from .views import CallDbFunctionView
 from .views import HelloView

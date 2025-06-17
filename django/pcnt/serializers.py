@@ -172,3 +172,15 @@ class HostDiskUsageSerializer(serializers.ModelSerializer):
     class Meta:
         model = HostDiskUsage
         fields = '__all__'
+
+from .models import Metric, MetricHistory
+
+class MetricSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Metric
+        fields = '__all__'
+
+class MetricHistorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MetricHistory
+        fields = '__all__'
