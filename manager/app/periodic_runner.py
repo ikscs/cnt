@@ -74,6 +74,7 @@ def main():
         'df': parse_df, 'du': parse_du,
         './docker_metric.py': parse_regular, './procinfo.py': parse_regular,
         './face_engine.py': parse_json,
+        './sql_exec.py': parse_regular,
     }
 
     dt = datetime.now()
