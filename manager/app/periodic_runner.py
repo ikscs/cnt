@@ -60,8 +60,21 @@ def parse_regular(txt, template):
         result[name] = data.get(name)
     return result
 
+def parse_json(data, template):
+    if not data:
+        return {}
+    result = dict()
+    for row in template['fields']:
+        name = row['name']
+        result[name] = data.get(name)
+    return result
+
 def main():
-    parsers = {'df': parse_df, 'du': parse_du, './docker_metric.py': parse_regular, './procinfo.py': parse_regular, }
+    parsers = {
+        'df': parse_df, 'du': parse_du,
+        './docker_metric.py': parse_regular, './procinfo.py': parse_regular,
+        './face_engine.py': parse_json,
+    }
 
     dt = datetime.now()
     if dt.microsecond == 0:
@@ -97,10 +110,19 @@ ORDER BY m.id, h.collected_at DESC;
 
         txt = result.stdout
 
-        output = parsers[metric_cmd](txt, template)
+        try:
+            data = json.loads(txt)
+        except Exception as err:
+            data = txt
 
-        value = json.dumps(output) if output else None
-        db.cursor.execute(sql_insert, (id, value))
+        if isinstance(data, list):
+            output = [parsers[metric_cmd](line, template) for line in data]
+        else:
+            output = [parsers[metric_cmd](txt, template)]
+
+        for row in output:
+            value = json.dumps(row) if row else None
+            db.cursor.execute(sql_insert, (id, value))
 
     db.conn.commit()
     db.close()

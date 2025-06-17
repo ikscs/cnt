@@ -9,5 +9,5 @@
 
 15 0 * * * /app/update_osd.py
 
-*/30 * * * * /app/get_info.py
+#*/30 * * * * /app/get_info.py
 3 3 * * * /app/get_info.py reset
