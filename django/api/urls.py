@@ -52,6 +52,8 @@ router_pcnt.register(r'host_disk_usage', HostDiskUsageViewSet)
 router_pcnt.register(r'metric', MetricViewSet)
 router_pcnt.register(r'metric_history', MetricHistoryViewSet)
 
+from pcnt.views import FaceRefererByPerson
+
 from .views import CallDbFunctionView
 from .views import HelloView
 
@@ -63,7 +65,8 @@ urlpatterns = [
     path('api/authdemo/', include('authdemo.urls')),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
- #    path("api/", include("helloworld.urls")),
+    path('api/pcnt/faces/person/<int:person_id>/', FaceRefererByPerson.as_view(), name='faces-by-person'),
+#    path("api/", include("helloworld.urls")),
 ]
 
 
