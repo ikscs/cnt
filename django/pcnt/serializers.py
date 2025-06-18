@@ -2,6 +2,7 @@
 from rest_framework import serializers
 
 from .models import Age, App, Billing, BillingCost, BillingIncome, City, Country, Customer, CustomerToApp, Division, EventCrossline, EventData, FaceData, FaceRefererData, FaceTimeSlot, Form, FormData, FormTag, FormVersion, Incoming, ManagerOrder, Method, Origin, OriginSchedule, OriginType, Osd, PermReport, Person, PersonGroup, Point
+from .fields import Base64BinaryField
 
 class AgeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -69,6 +70,7 @@ class FaceDataSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class FaceRefererDataSerializer(serializers.ModelSerializer):
+    photo = Base64BinaryField()
     class Meta:
         model = FaceRefererData
         fields = '__all__'
