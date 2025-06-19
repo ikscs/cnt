@@ -165,7 +165,7 @@ class FaceRefererData(models.Model):
     photo = models.BinaryField()
     comment = models.TextField(blank=True, null=True)
     embedding = models.TextField(blank=True, null=True)  # This field type is a guess.
-    person = models.ForeignKey('Person', models.DO_NOTHING)
+    person_id = models.ForeignKey('Person', models.DO_NOTHING, db_column='person_id')
 
     class Meta:
         managed = False
@@ -450,6 +450,7 @@ class Metric(models.Model):
     group_name = models.TextField(blank=True, null=True)
     sortord = models.SmallIntegerField(blank=True, null=True)
     metric_cmd = models.TextField()
+    dashboard_view = models.BooleanField()
 
     class Meta:
         managed = False
@@ -463,3 +464,22 @@ class MetricHistory(models.Model):
     class Meta:
         managed = False
         db_table = 'metric_history'
+
+class LatestMetric(models.Model):
+    id = models.IntegerField(primary_key=True)
+    metric_name = models.CharField(max_length=255)
+    template = models.JSONField()
+    comment = models.TextField(null=True)
+    metric_param = models.TextField()
+    cron = models.CharField(max_length=100)
+    enable = models.BooleanField()
+    group_name = models.CharField(max_length=255)
+    sortord = models.IntegerField()
+    metric_cmd = models.TextField()
+    dashboard_view = models.BooleanField()
+    collected_at = models.DateTimeField()
+    value = models.JSONField()
+
+    class Meta:
+        managed = False
+        db_table = 'v_metric_last'

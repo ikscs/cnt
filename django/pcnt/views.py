@@ -168,3 +168,9 @@ class MetricHistoryViewSet(viewsets.ModelViewSet):
     queryset = MetricHistory.objects.all()
     serializer_class = MetricHistorySerializer
 
+from .models import LatestMetric
+from .serializers import LatestMetricSerializer
+
+class LatestMetricViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = LatestMetric.objects.all()
+    serializer_class = LatestMetricSerializer

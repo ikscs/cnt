@@ -186,3 +186,10 @@ class MetricHistorySerializer(serializers.ModelSerializer):
     class Meta:
         model = MetricHistory
         fields = '__all__'
+
+from .models import LatestMetric
+
+class LatestMetricSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LatestMetric
+        fields = '__all__'

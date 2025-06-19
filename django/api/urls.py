@@ -14,6 +14,8 @@ from pcnt.views import ParamViewSet
 from pcnt.views import HostContainerStatusViewSet, HostDiskUsageViewSet
 from pcnt.views import MetricViewSet, MetricHistoryViewSet
 
+from pcnt.views import LatestMetricViewSet
+
 router_pcnt = DefaultRouter()
 
 router_pcnt.register(r'age', AgeViewSet)
@@ -51,6 +53,7 @@ router_pcnt.register(r'host_container_status', HostContainerStatusViewSet)
 router_pcnt.register(r'host_disk_usage', HostDiskUsageViewSet)
 router_pcnt.register(r'metric', MetricViewSet)
 router_pcnt.register(r'metric_history', MetricHistoryViewSet)
+router_pcnt.register(r'v_metric_last', LatestMetricViewSet)
 
 from pcnt.views import FaceRefererByPerson
 
@@ -65,7 +68,8 @@ urlpatterns = [
     path('api/authdemo/', include('authdemo.urls')),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('api/pcnt/faces/person/<int:person_id>/', FaceRefererByPerson.as_view(), name='faces-by-person'),
+#    path('api/pcnt/faces/person/<int:person_id>/', FaceRefererByPerson.as_view(), name='faces-by-person'),
+    path('api/pcnt/face_referer_data/person/<int:person_id>/', FaceRefererByPerson.as_view(), name='faces-by-person'),
 #    path("api/", include("helloworld.urls")),
 ]
 
