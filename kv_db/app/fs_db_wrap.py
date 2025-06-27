@@ -53,7 +53,7 @@ def erase_binary():
     size = request.form['size']
     days = request.form['days']
 
-    cmd = f'eraser.py {size} {days}'
+    cmd = f'/app/eraser.py {size} {days}'
     try:
         result = os.popen(cmd).read()
         status = 200
@@ -67,7 +67,7 @@ def erase_binary():
 def cleanup_storage():
     size = request.form['size']
 
-    cmd = f'cleanup.py {size}'
+    cmd = f'/app/cleanup.py {size}'
     try:
         result = os.popen(cmd).read()
         status = 200
