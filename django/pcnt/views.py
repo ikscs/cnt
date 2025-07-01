@@ -2,6 +2,8 @@
 from rest_framework import viewsets
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.decorators import action
+from rest_framework.viewsets import ViewSet
 
 from .models import Age, App, Billing, BillingCost, BillingIncome, City, Country, Customer, CustomerToApp, Division, EventCrossline, EventData, FaceData, FaceRefererData, FaceTimeSlot, Form, FormData, FormTag, FormVersion, Incoming, ManagerOrder, Method, Origin, OriginSchedule, OriginType, Osd, PermReport, Person, PersonGroup, Point
 from .serializers import AgeSerializer, AppSerializer, BillingSerializer, BillingCostSerializer, BillingIncomeSerializer, CitySerializer, CountrySerializer, CustomerSerializer, CustomerToAppSerializer, DivisionSerializer, EventCrosslineSerializer, EventDataSerializer, FaceDataSerializer, FaceRefererDataSerializer, FaceTimeSlotSerializer, FormSerializer, FormDataSerializer, FormTagSerializer, FormVersionSerializer, IncomingSerializer, ManagerOrderSerializer, MethodSerializer, OriginSerializer, OriginScheduleSerializer, OriginTypeSerializer, OsdSerializer, PermReportSerializer, PersonSerializer, PersonGroupSerializer, PointSerializer
@@ -64,6 +66,14 @@ class FaceRefererDataViewSet(viewsets.ModelViewSet):
 
 class FaceRefererByPerson(APIView):
     def get(self, request, person_id):
+        faces = FaceRefererData.objects.filter(person_id=person_id)
+        serializer = FaceRefererDataSerializer(faces, many=True)
+        return Response(serializer.data)
+
+class FaceRefererViewSet(ViewSet):
+    @action(detail=True, methods=['get'], url_path='person')
+    def by_person(self, request, pk=None):
+        person_id = pk  # Since `detail=True`, `pk` comes from the URL
         faces = FaceRefererData.objects.filter(person_id=person_id)
         serializer = FaceRefererDataSerializer(faces, many=True)
         return Response(serializer.data)

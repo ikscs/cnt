@@ -5,8 +5,15 @@ from rest_framework.exceptions import AuthenticationFailed
 
 from django.conf import settings
 
-USERFRONT_PUBLIC_KEYS_URL = f'https://api.userfront.com/v0/tenants/{settings.TENANTID}/keys/jwt'
-public_key = requests.get(USERFRONT_PUBLIC_KEYS_URL).json()['results'][0]['publicKey']
+#Load public keys
+public_key = dict()
+USERFRONT_PUBLIC_KEYS_URL = 'https://api.userfront.com/v0/tenants/{tenant_id}/keys/jwt{param}'
+for tenant_id in settings.TENANTIDS:
+    public_key[tenant_id] = dict()
+    for mode, param in {'live': '?live=true', 'test': '?test=true'}.items():
+        url = USERFRONT_PUBLIC_KEYS_URL.format(tenant_id=tenant_id, param=param)
+        public_key[tenant_id][mode] = requests.get(url).json()['results'][0]['publicKey']
+
 
 class UserfrontAuthentication(BaseAuthentication):
     def authenticate(self, request):
@@ -16,10 +23,17 @@ class UserfrontAuthentication(BaseAuthentication):
 
         token = auth_header.split(' ')[1]
 
+        #Select public_key
+        try:
+            payload = jwt.decode(token, options={"verify_signature": False})
+            pk = public_key[payload['tenantId']][payload['mode']]
+        except Exception as e:
+            raise AuthenticationFailed(f'Authentication error: {str(e)}')
+
         try:
             payload = jwt.decode(
                 token,
-                public_key,
+                pk,
                 algorithms=['RS256'],
                 options={"verify_aud": False}
             )
@@ -31,7 +45,7 @@ class UserfrontAuthentication(BaseAuthentication):
         except Exception as e:
             raise AuthenticationFailed(f'Authentication error: {str(e)}')
 
-        if payload['tenantId'] != settings.TENANTID:
+        if payload['tenantId'] not in settings.TENANTIDS:
             raise AuthenticationFailed(f'Wrong tenantId')
 
         user = FakeUser(payload['userId'], payload.get('userUuid'))

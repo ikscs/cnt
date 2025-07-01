@@ -14,7 +14,7 @@ USERFRONT_PUBLIC_KEY = {
     "cnt": 'USERFRONT_PUBLIC_KEY_CNT',
 }
 
-TENANTID = 'pn46j8wn'
+TENANTIDS = ['pn46j8wn', '8b6p497b']
 
 ALLOWED_HOSTS = ["*"]
 
