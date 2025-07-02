@@ -7,6 +7,7 @@ from django.db import connections
 from django.utils.html import escape  # for sanitizing 'func' input
 import json
 
+'''
 class CallDbFunctionView(APIView):
     def post(self, request):
         func = request.query_params.get("func")
@@ -28,6 +29,7 @@ class CallDbFunctionView(APIView):
 
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+'''
 
 class HelloView(APIView):
     permission_classes = [IsAuthenticated]

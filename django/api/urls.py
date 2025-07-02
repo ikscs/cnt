@@ -59,7 +59,7 @@ from pcnt.views import FaceRefererByPerson
 from pcnt.views import FaceRefererViewSet
 router_pcnt.register(r'face_referer_data1', FaceRefererViewSet, basename='face-referer')
 
-from .views import CallDbFunctionView
+from pcnt.views import CallDbFunctionView
 from .views import HelloView
 
 urlpatterns = [

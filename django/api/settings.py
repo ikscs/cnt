@@ -9,6 +9,9 @@ environ.Env.read_env()
 SECRET_KEY = env('SECRET_KEY')
 DEBUG = env('DEBUG')
 
+#Set False for product!
+BYPASS_AUTH = False
+
 USERFRONT_PUBLIC_KEY = {
 #    "cnt": env('USERFRONT_PUBLIC_KEY_CNT'),
     "cnt": 'USERFRONT_PUBLIC_KEY_CNT',
