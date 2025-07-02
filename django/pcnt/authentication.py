@@ -17,6 +17,11 @@ for tenant_id in settings.TENANTIDS:
 
 class UserfrontAuthentication(BaseAuthentication):
     def authenticate(self, request):
+
+        if settings.BYPASS_AUTH:
+            user = FakeUser('warning', 'Authentification disabled!!!', 1)
+            return (user, None)
+
         auth_header = request.headers.get('Authorization')
         if not auth_header or not auth_header.startswith('Bearer '):
             return None
@@ -48,13 +53,14 @@ class UserfrontAuthentication(BaseAuthentication):
         if payload['tenantId'] not in settings.TENANTIDS:
             raise AuthenticationFailed(f'Wrong tenantId')
 
-        user = FakeUser(payload['userId'], payload.get('userUuid'))
+        user = FakeUser(payload['userId'], payload.get('userUuid'), payload.get('customer_id'))
         return (user, None)
 
 class FakeUser:
-    def __init__(self, user_id, username=None):
+    def __init__(self, user_id, username=None, customer_id=None):
         self.id = user_id
         self.username = username or f"user_{user_id}"
+        self.customer_id = customer_id
     @property
     def is_authenticated(self):
         return True
