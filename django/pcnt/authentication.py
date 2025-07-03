@@ -4,6 +4,7 @@ from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 
 from django.conf import settings
+from django.db import connections
 
 #Load public keys
 public_key = dict()
@@ -19,7 +20,7 @@ class UserfrontAuthentication(BaseAuthentication):
     def authenticate(self, request):
 
         if settings.BYPASS_AUTH:
-            user = FakeUser('warning', 'Authentification disabled!!!', 1)
+            user = FakeUser(None, None, 'Authentification disabled!!!')
             return (user, None)
 
         auth_header = request.headers.get('Authorization')
@@ -53,14 +54,20 @@ class UserfrontAuthentication(BaseAuthentication):
         if payload['tenantId'] not in settings.TENANTIDS:
             raise AuthenticationFailed(f'Wrong tenantId')
 
-        user = FakeUser(payload['userId'], payload.get('userUuid'), payload.get('customer_id'))
+        print(payload)
+        user = FakeUser(payload['tenantId'], payload['userId'], payload.get('userUuid'), payload['mode'])
         return (user, None)
 
 class FakeUser:
-    def __init__(self, user_id, username=None, customer_id=None):
+    def __init__(self, tenant_id=None, user_id=None, username=None, mode=None):
         self.id = user_id
         self.username = username or f"user_{user_id}"
-        self.customer_id = customer_id
+        self.tenant_id = tenant_id
+        self.mode = mode
+
+        with connections['pcnt'].cursor() as cursor:
+            cursor.execute("CALL public.set_rls(%s, %s, %s);", [self.tenant_id, self.id, self.mode])
+
     @property
     def is_authenticated(self):
         return True
