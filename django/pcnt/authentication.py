@@ -54,7 +54,6 @@ class UserfrontAuthentication(BaseAuthentication):
         if payload['tenantId'] not in settings.TENANTIDS:
             raise AuthenticationFailed(f'Wrong tenantId')
 
-        print(payload)
         user = FakeUser(payload['tenantId'], payload['userId'], payload.get('userUuid'), payload['mode'])
         return (user, None)
 
