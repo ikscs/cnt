@@ -192,6 +192,12 @@ class LatestMetricViewSet(PCNTBaseReadOnlyViewSet):
     serializer_class = LatestMetricSerializer
 #    permission_classes = [IsAuthenticated]
 
+from .models import ExportVCA
+from .serializers import ExportVCASerializer
+
+class ExportVCAViewSet(PCNTBaseReadOnlyViewSet):
+    queryset = ExportVCA.objects.all()
+    serializer_class = ExportVCASerializer
 
 class CallDbFunctionView(PCNTBaseAPIView):
     def post(self, request):

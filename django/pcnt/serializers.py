@@ -193,3 +193,9 @@ class LatestMetricSerializer(serializers.ModelSerializer):
     class Meta:
         model = LatestMetric
         fields = '__all__'
+
+from .models import ExportVCA
+class ExportVCASerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ExportVCA
+        fields = '__all__'

@@ -483,3 +483,15 @@ class LatestMetric(models.Model):
     class Meta:
         managed = False
         db_table = 'v_metric_last'
+
+class ExportVCA(models.Model):
+    point = models.CharField(max_length=255)
+    date = models.DateTimeField()
+    gender = models.CharField(max_length=10)
+    age = models.IntegerField()
+    customer_id = models.IntegerField()
+    point_id = models.IntegerField()
+
+    class Meta:
+        managed = False
+        db_table = 'v_export_vca'

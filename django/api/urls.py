@@ -15,6 +15,7 @@ from pcnt.views import HostContainerStatusViewSet, HostDiskUsageViewSet
 from pcnt.views import MetricViewSet, MetricHistoryViewSet
 
 from pcnt.views import LatestMetricViewSet
+from pcnt.views import ExportVCAViewSet
 
 router_pcnt = DefaultRouter()
 
@@ -54,6 +55,7 @@ router_pcnt.register(r'host_disk_usage', HostDiskUsageViewSet)
 router_pcnt.register(r'metric', MetricViewSet)
 router_pcnt.register(r'metric_history', MetricHistoryViewSet)
 router_pcnt.register(r'v_metric_last', LatestMetricViewSet)
+router_pcnt.register(r'v_export_vca', ExportVCAViewSet)
 
 from pcnt.views import FaceRefererByPerson
 from pcnt.views import FaceRefererViewSet
