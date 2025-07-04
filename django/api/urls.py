@@ -66,10 +66,13 @@ from .views import HelloView
 
 from pcnt.views import ExportVCAViewSetByPoint
 
+from pcnt.views import CallReportView
+
 urlpatterns = [
     path("api/admin/", admin.site.urls),
     path("api/pcnt/", include(router_pcnt.urls)),
     path("api/f5", CallDbFunctionView.as_view(), name='call-db-function'),
+    path("api/report", CallReportView.as_view(), name='call-report-view'),
     path("api/hello/", HelloView.as_view(), name='hello'),
     path('api/authdemo/', include('authdemo.urls')),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),

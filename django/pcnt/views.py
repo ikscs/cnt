@@ -227,3 +227,28 @@ class CallDbFunctionView(PCNTBaseAPIView):
 
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class CallReportView(PCNTBaseAPIView):
+    def post(self, request):
+
+        with connections['pcnt'].cursor() as cursor:
+            query = "SELECT query, report_config FROM perm_report WHERE app_id=%s AND report_id=%s;"
+            cursor.execute(query, [request.data.get('app_id'), request.data.get('report_id')])
+            row = cursor.fetchone()
+            if not row:
+                return Response({'ok': False, 'data': []}, content_type='application/json')
+
+            query = row[0]
+            data = json.loads(row[1])
+            for param in data['params']:
+                query = query.replace(f":{param['name']}", f"%({param['name']})s")
+
+            data = []
+            cursor.execute(query, request.data)
+            for row in cursor.fetchall():
+                data.append(row)
+
+        return Response({'ok': True, 'data': data}, content_type='application/json')
+
+#        except Exception as e:
+#            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
