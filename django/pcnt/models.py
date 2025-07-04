@@ -80,7 +80,7 @@ class Country(models.Model):
 
 
 class Customer(models.Model):
-    customer_id = models.DecimalField(primary_key=True, max_digits=65535, decimal_places=65535)
+    customer_id = models.DecimalField(primary_key=True, max_digits=20, decimal_places=0)
     legal_name = models.TextField()
     address = models.TextField(blank=True, null=True)
     country = models.TextField(blank=True, null=True)
@@ -107,7 +107,7 @@ class CustomerToApp(models.Model):
 
 class Division(models.Model):
     pk = models.CompositePrimaryKey('customer_id', 'division_id')
-    customer_id = models.DecimalField(max_digits=65535, decimal_places=65535)
+    customer_id = models.DecimalField(max_digits=20, decimal_places=0)
     legal_name = models.TextField()
     address = models.TextField()
     division_id = models.TextField()
@@ -144,7 +144,7 @@ class EventData(models.Model):
 class FaceData(models.Model):
     face_uuid = models.CharField(primary_key=True)
     file_uuid = models.CharField()
-    face_idx = models.DecimalField(max_digits=65535, decimal_places=65535)
+    face_idx = models.DecimalField(max_digits=20, decimal_places=0)
     ts = models.DateTimeField()
     embedding = models.TextField()  # This field type is a guess.
     facial_area = models.JSONField()
@@ -354,8 +354,7 @@ class PermReport(models.Model):
     query = models.TextField(blank=True, null=True)
     report_config = models.TextField(blank=True, null=True)
     report_description = models.TextField(blank=True, null=True)
-    report_id = models.DecimalField(max_digits=65535, decimal_places=65535)
-
+    report_id = models.DecimalField(max_digits=20, decimal_places=0)
     class Meta:
         managed = False
         db_table = 'perm_report'
