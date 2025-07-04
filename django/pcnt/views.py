@@ -199,6 +199,12 @@ class ExportVCAViewSet(PCNTBaseReadOnlyViewSet):
     queryset = ExportVCA.objects.all()
     serializer_class = ExportVCASerializer
 
+class ExportVCAViewSetByPoint(PCNTBaseAPIView):
+    def get(self, request, point_id):
+        data = ExportVCA.objects.filter(point_id=point_id)
+        serializer = ExportVCASerializer(data, many=True)
+        return Response(serializer.data)
+
 class CallDbFunctionView(PCNTBaseAPIView):
     def post(self, request):
         func = request.query_params.get("func")

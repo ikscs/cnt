@@ -19,6 +19,15 @@ for tenant_id in settings.TENANTIDS:
 class UserfrontAuthentication(BaseAuthentication):
     def authenticate(self, request):
 
+        '''
+        match = request.resolver_match
+        if match:
+            view_func = match.func  # DRF view class instance
+            view_class = view_func.cls if hasattr(view_func, 'cls') else None
+            action = match.url_name  # or match.view_name
+            print(f"Func: {view_func}, view: {view_class}, action: {action}")
+        '''
+
         if settings.BYPASS_AUTH:
             user = FakeUser(None, None, 'Authentification disabled!!!')
             return (user, None)

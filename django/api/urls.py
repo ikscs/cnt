@@ -64,6 +64,8 @@ router_pcnt.register(r'face_referer_data1', FaceRefererViewSet, basename='face-r
 from pcnt.views import CallDbFunctionView
 from .views import HelloView
 
+from pcnt.views import ExportVCAViewSetByPoint
+
 urlpatterns = [
     path("api/admin/", admin.site.urls),
     path("api/pcnt/", include(router_pcnt.urls)),
@@ -74,6 +76,7 @@ urlpatterns = [
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 #    path('api/pcnt/faces/person/<int:person_id>/', FaceRefererByPerson.as_view(), name='faces-by-person'),
     path('api/pcnt/face_referer_data/person/<int:person_id>/', FaceRefererByPerson.as_view(), name='faces-by-person'),
+    path('api/pcnt/v_export_vca/point/<int:point_id>/', ExportVCAViewSetByPoint.as_view(), name='v_export_vca-by-point'),
 #    path("api/", include("helloworld.urls")),
 ]
 
