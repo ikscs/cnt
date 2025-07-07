@@ -121,6 +121,12 @@ class OriginViewSet(PCNTBaseViewSet):
     queryset = Origin.objects.all()
     serializer_class = OriginSerializer
 
+class OriginByPointId(PCNTBaseAPIView):
+    def get(self, request, point_id):
+        records = Origin.objects.filter(point_id=point_id)
+        serializer = OriginSerializer(records, many=True)
+        return Response(serializer.data)
+
 class OriginScheduleViewSet(PCNTBaseViewSet):
     queryset = OriginSchedule.objects.all()
     serializer_class = OriginScheduleSerializer
