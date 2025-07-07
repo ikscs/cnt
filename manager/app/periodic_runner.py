@@ -23,18 +23,20 @@ class DB:
         self.conn.close()
 
 def parse_df(txt, template):
-    fields_idx = {'total': 1, 'used': 2}
     line = txt.strip().split('\n')[-1]
     values = line.split()
 
     result = dict()
-    for row in template['fields']:
-        name = row['name']
-        if name in fields_idx:
-            try:
-                result[name] = int(values[fields_idx[name]])/1024/1024
-            except Exception as err:
-                result[name] = -1
+    try:
+        result['total'] = round(int(values[1])/1024/1024)
+    except Exception as err:
+        result['total'] = -1
+
+    try:
+        result['used'] = int(values[4].replace('%', ''))
+    except Exception as err:
+        result['used'] = -1
+
     return result
 
 def parse_du(txt, template):
