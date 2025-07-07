@@ -94,7 +94,7 @@ class Customer(models.Model):
 
 class CustomerToApp(models.Model):
     pk = models.CompositePrimaryKey('app_id', 'customer_id')
-    customer = models.ForeignKey(Customer, models.DO_NOTHING)
+    customer_id = models.ForeignKey(Customer, models.DO_NOTHING, db_column='customer_id', to_field='customer_id')
     app = models.ForeignKey(App, models.DO_NOTHING)
     child_tenant_id = models.TextField()
     is_active = models.BooleanField()
@@ -202,7 +202,7 @@ class Form(models.Model):
 
 class FormData(models.Model):
     id = models.UUIDField(primary_key=True, db_default=Value('gen_random_uuid()', output_field=models.UUIDField()), editable=False,)
-    form = models.ForeignKey('FormVersion', models.DO_NOTHING, to_field='form_id', blank=True, null=True, unique=True)
+    form_id = models.ForeignKey(Form, models.DO_NOTHING, to_field='id', db_column='form_id', blank=True, null=True, unique=True)
     version = models.IntegerField()
     data = models.JSONField(db_comment='JSON данные, собранные через форму')
     created_at = models.DateTimeField()
@@ -218,7 +218,7 @@ class FormData(models.Model):
 
 class FormTag(models.Model):
     pk = models.CompositePrimaryKey('form_id', 'tag')
-    form = models.ForeignKey(Form, models.DO_NOTHING)
+    form_id = models.ForeignKey(Form, models.DO_NOTHING, to_field='id', db_column='form_id')
     tag = models.CharField(max_length=50)
 
     class Meta:
@@ -228,7 +228,7 @@ class FormTag(models.Model):
 
 class FormVersion(models.Model):
     id = models.UUIDField(primary_key=True)
-    form = models.ForeignKey(Form, models.DO_NOTHING, blank=True, null=True)
+    form_id = models.ForeignKey(Form, models.DO_NOTHING, blank=True, null=True, to_field='id', db_column='form_id')
     version = models.IntegerField()
     config = models.JSONField(db_comment='JSON конфигурация формы, включая поля и макет')
     comment = models.TextField(blank=True, null=True)
@@ -244,11 +244,11 @@ class FormVersion(models.Model):
 class Incoming(models.Model):
     file_uuid = models.CharField(primary_key=True)
     ts = models.DateTimeField()
-    origin = models.ForeignKey('Origin', models.DO_NOTHING, db_column='origin', to_field='origin')
+#    origin = models.ForeignKey('Origin', models.DO_NOTHING, db_column='origin', to_field='origin')
     title = models.CharField(blank=True, null=True)
     filename = models.CharField(blank=True, null=True)
     faces_cnt = models.SmallIntegerField(blank=True, null=True)
-    origin_0 = models.ForeignKey('Origin', models.DO_NOTHING, db_column='origin_id', related_name='incoming_origin_0_set')  # Field renamed because of name conflict.
+    origin_id = models.ForeignKey('Origin', models.DO_NOTHING, db_column='origin_id', to_field='id')#, 'related_name'='incoming_origin_0_set')  # Field renamed because of name conflict.
 
     class Meta:
         managed = False
@@ -289,7 +289,7 @@ class Method(models.Model):
 
 class Origin(models.Model):
     origin = models.CharField(unique=True, max_length=255)
-    point = models.ForeignKey('Point', models.DO_NOTHING, blank=True, null=True)
+    point_id = models.ForeignKey('Point', models.DO_NOTHING, blank=True, null=True, db_column='point_id', to_field='point_id')
     origin_type = models.ForeignKey('OriginType', models.DO_NOTHING)
     credentials = models.JSONField(blank=True, null=True)
     is_enabled = models.BooleanField()
@@ -303,7 +303,7 @@ class Origin(models.Model):
 
 
 class OriginSchedule(models.Model):
-    origin = models.OneToOneField(Origin, models.DO_NOTHING, primary_key=True)
+    origin_id = models.OneToOneField(Origin, models.DO_NOTHING, primary_key=True, db_column='origin_id', to_field='id')
     start_time = models.TimeField()
     end_time = models.TimeField()
     poling_period_s = models.IntegerField()
@@ -334,7 +334,7 @@ class OriginType(models.Model):
 
 
 class Osd(models.Model):
-    origin = models.ForeignKey(Origin, models.DO_NOTHING)
+    origin_id = models.ForeignKey(Origin, models.DO_NOTHING, db_column='origin_id', to_field='id')
     header = models.CharField(blank=True, null=True)
     title = models.CharField()
     src_table = models.CharField()
@@ -375,7 +375,7 @@ class PersonGroup(models.Model):
     group_id = models.AutoField(primary_key=True)
     customer_id = models.IntegerField(blank=True, null=True)
     name = models.CharField(max_length=255, blank=True, null=True)
-    point = models.ForeignKey('Point', models.DO_NOTHING)
+    point_id = models.ForeignKey('Point', models.DO_NOTHING)
 
     class Meta:
         managed = False
@@ -458,7 +458,7 @@ class Metric(models.Model):
 class MetricHistory(models.Model):
     collected_at = models.DateTimeField()
     value = models.JSONField(blank=True, null=True)
-    metric = models.ForeignKey(Metric, models.DO_NOTHING)
+    metric_id = models.ForeignKey(Metric, models.DO_NOTHING)
 
     class Meta:
         managed = False
