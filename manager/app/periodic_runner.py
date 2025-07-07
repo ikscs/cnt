@@ -71,6 +71,16 @@ def parse_json(data, template):
         result[name] = data.get(name)
     return result
 
+def get_status(val, ranges):
+    for k, v in ranges.items():
+        if isinstance(val, (float, int)):
+            if val >= v[0] and val <= v[1]:
+                return k
+        elif isinstance(val, (str, )):
+            if val in v:
+                return k
+    return None
+
 def main():
     parsers = {
         'df': parse_df, 'du': parse_du,
@@ -96,7 +106,7 @@ WHERE m.enable
 ORDER BY m.id, h.collected_at DESC;
 '''
 
-    sql_insert = 'INSERT INTO metric_history (metric_id, "value") VALUES (%s, %s)'
+    sql_insert = 'INSERT INTO metric_history (metric_id, "value", status) VALUES (%s, %s, %s)'
 
     db.cursor.execute(sql_select)
     for id, metric_cmd, metric_param, cron, template, collected_at in db.cursor.fetchall():
@@ -123,9 +133,23 @@ ORDER BY m.id, h.collected_at DESC;
         else:
             output = [parsers[metric_cmd](txt, template)]
 
+        #Get ranges for status check
+        ranges = dict()
+        for e in template["fields"]:
+            ranges[e["name"]] = e.get("range")
+
         for row in output:
             value = json.dumps(row) if row else None
-            db.cursor.execute(sql_insert, (id, value))
+
+            #check status
+            status = dict()
+            for k, v in row.items():
+                if not ranges[k]:
+                    continue
+                status[k] = get_status(v, ranges[k])
+            st = json.dumps(status) if status else None
+
+            db.cursor.execute(sql_insert, (id, value, st))
 
     db.conn.commit()
     db.close()
