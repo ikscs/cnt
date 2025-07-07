@@ -83,7 +83,7 @@ urlpatterns = [
     path('api/pcnt/face_referer_data/person/<int:person_id>/', FaceRefererByPerson.as_view(), name='faces-by-person'),
     path('api/pcnt/v_export_vca/point/<int:point_id>/', ExportVCAViewSetByPoint.as_view(), name='v_export_vca-by-point'),
 
-    path('api/pcnt/origin/point/<int:pointn_id>/', OriginByPointId.as_view(), name='origin-by-point'),
+    path('api/pcnt/origin/point/<int:point_id>/', OriginByPointId.as_view(), name='origin-by-point'),
 #    path("api/", include("helloworld.urls")),
 ]
 
