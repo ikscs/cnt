@@ -29,6 +29,11 @@ def main(mode, container_name):
                 result['memory_percentage'] = round(100*stats["memory_stats"]["usage"] / stats["memory_stats"]["limit"], 1)
             except Exception as e:
                 result['memory_percentage'] = -1
+
+            try:
+                result['pids_percentage'] = round(100*stats["pids_stats"]["current"] / stats["pids_stats"]["limit"], 1)
+            except Exception as e:
+                result['pids_percentage'] = -1
     return result
 
 def calculate_cpu_percentage(stats):
