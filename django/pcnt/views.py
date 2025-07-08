@@ -211,6 +211,24 @@ class ExportVCAViewSetByPoint(PCNTBaseAPIView):
         serializer = ExportVCASerializer(data, many=True)
         return Response(serializer.data)
 
+from .models import VCustomerOrigin
+from .serializers import VCustomerOriginSerializer
+class VCustomerOriginViewSet(PCNTBaseReadOnlyViewSet):
+    queryset = VCustomerOrigin.objects.all()
+    serializer_class = VCustomerOriginSerializer
+
+from .models import VCustomerPerson
+from .serializers import VCustomerPersonSerializer
+class VCustomerPersonViewSet(PCNTBaseReadOnlyViewSet):
+    queryset = VCustomerPerson.objects.all()
+    serializer_class = VCustomerPersonSerializer
+
+from .models import VCustomerExport
+from .serializers import VCustomerExportSerializer
+class VCustomerExportViewSet(PCNTBaseReadOnlyViewSet):
+    queryset = VCustomerExport.objects.all()
+    serializer_class = VCustomerExportSerializer
+
 class CallDbFunctionView(PCNTBaseAPIView):
     def post(self, request):
         func = request.query_params.get("func")

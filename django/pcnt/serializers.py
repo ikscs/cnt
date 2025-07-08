@@ -199,3 +199,21 @@ class ExportVCASerializer(serializers.ModelSerializer):
     class Meta:
         model = ExportVCA
         fields = '__all__'
+
+from .models import VCustomerOrigin
+class VCustomerOriginSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VCustomerOrigin
+        fields = '__all__'
+
+from .models import VCustomerPerson
+class VCustomerPersonSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VCustomerPerson
+        fields = '__all__'
+
+from .models import VCustomerExport
+class VCustomerExportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VCustomerExport
+        fields = '__all__'

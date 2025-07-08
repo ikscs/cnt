@@ -61,6 +61,15 @@ from pcnt.views import FaceRefererByPerson
 from pcnt.views import FaceRefererViewSet
 router_pcnt.register(r'face_referer_data1', FaceRefererViewSet, basename='face-referer')
 
+from pcnt.views import VCustomerOriginViewSet
+router_pcnt.register(r'v_customer_origin', VCustomerOriginViewSet, basename='v-customer-origin')
+
+from pcnt.views import VCustomerPersonViewSet
+router_pcnt.register(r'v_customer_person', VCustomerPersonViewSet, basename='v-customer-person')
+
+from pcnt.views import VCustomerExportViewSet
+router_pcnt.register(r'v_customer_export', VCustomerExportViewSet, basename='v-customer-export')
+
 from pcnt.views import OriginByPointId
 
 from pcnt.views import CallDbFunctionView

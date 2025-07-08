@@ -290,7 +290,7 @@ class Method(models.Model):
 class Origin(models.Model):
     origin = models.CharField(unique=True, max_length=255)
     point_id = models.ForeignKey('Point', models.DO_NOTHING, blank=True, null=True, db_column='point_id', to_field='point_id')
-    origin_type = models.ForeignKey('OriginType', models.DO_NOTHING)
+    origin_type_id = models.ForeignKey('OriginType', models.DO_NOTHING, db_column='origin_type_id', to_field='origin_type_id')
     credentials = models.JSONField(blank=True, null=True)
     is_enabled = models.BooleanField()
     name = models.TextField(blank=True, null=True)
@@ -375,8 +375,7 @@ class PersonGroup(models.Model):
     group_id = models.AutoField(primary_key=True)
     customer_id = models.IntegerField(blank=True, null=True)
     name = models.CharField(max_length=255, blank=True, null=True)
-    point_id = models.ForeignKey('Point', models.DO_NOTHING)
-
+    point_id = models.ForeignKey('Point', models.DO_NOTHING, db_column='point_id', to_field='point_id')
     class Meta:
         managed = False
         db_table = 'person_group'
@@ -494,3 +493,42 @@ class ExportVCA(models.Model):
     class Meta:
         managed = False
         db_table = 'v_export_vca'
+
+class VCustomerOrigin(models.Model):
+    customer_id = models.IntegerField(null=True)
+    origin = models.CharField(max_length=255)
+    id = models.IntegerField(primary_key=True)
+    point_id = models.IntegerField()
+    origin_type_id = models.IntegerField()
+    credentials = models.JSONField(null=True, blank=True)
+    is_enabled = models.BooleanField(default=True)
+    name = models.TextField(null=True, blank=True)
+
+    class Meta:
+        managed = False
+        db_table = 'v_customer_origin'
+
+class VCustomerPerson(models.Model):
+    customer_id = models.IntegerField(null=True)
+    person_id = models.AutoField(primary_key=True)
+    group_id = models.IntegerField()
+    name = models.CharField(max_length=255, null=True, blank=True)
+
+    class Meta:
+        managed = False
+        db_table = 'v_customer_person'
+
+class VCustomerExport(models.Model):
+    row_id = models.AutoField(primary_key=True)
+    point_id = models.IntegerField()
+    name = models.CharField(max_length=255, null=True, blank=True)  # point.name
+    customer_id = models.IntegerField(null=True)
+    ts = models.DateTimeField()  # truncated timestamp
+    age = models.CharField(max_length=10, null=True, blank=True)  # extracted from JSON
+    race = models.CharField(max_length=50, null=True, blank=True)
+    emotion = models.CharField(max_length=50, null=True, blank=True)
+    gender = models.CharField(max_length=10)  # derived from dominant_gender
+
+    class Meta:
+        managed = False
+        db_table = 'v_customer_export'
