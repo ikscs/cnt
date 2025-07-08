@@ -13,3 +13,4 @@
 3 3 * * * /app/get_info.py reset
 
 40 4 * * 0 /app/docker_restart.py face_reception
+30 3 * * * /app/docker_kill_zombie.py face_reception
