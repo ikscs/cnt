@@ -11,3 +11,5 @@
 
 #*/30 * * * * /app/get_info.py
 3 3 * * * /app/get_info.py reset
+
+40 4 * * 0 /app/docker_restart.py face_reception
