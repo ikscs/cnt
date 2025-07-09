@@ -6,6 +6,8 @@ import signal
 def main(container_name):
     client = docker.from_env()
 
+    container = client.containers.get(container_name)
+
     # Send SIGCHLD to PID 1 inside the container
     exit_code, output = container.exec_run("kill -CHLD 1")
 
