@@ -15,6 +15,6 @@ if __name__ == "__main__":
         signal.signal(signal.SIGCHLD, signal.SIG_IGN)
 
     try:
-        process = subprocess.Popen(rocket)
+        process = subprocess.Popen(rocket, start_new_session=True)
     except Exception as e:
         print(str(e))
