@@ -260,19 +260,30 @@ class CallReportView(PCNTBaseAPIView):
             cursor.execute(query, [request.data.get('app_id'), request.data.get('report_id')])
             row = cursor.fetchone()
             if not row:
-                return Response({'ok': False, 'data': []}, content_type='application/json')
+                return Response({'ok': False, 'data': ['Wrong report']}, content_type='application/json')
 
-            query = row[0]
-            data = json.loads(row[1])
+            try:
+                query = row[0]
+                data = json.loads(row[1])
+            except Exception as err:
+                return Response({'ok': False, 'data': [str(err)]}, content_type='application/json', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            required_params = set()
             for param in data['params']:
+                required_params.add(param['name'])
                 query = query.replace(f":{param['name']}", f"%({param['name']})s")
 
+            val = {e.get('name'): e.get('value') for e in request.data.get('parameters') if e.get('name') in required_params}
+
+            if set(val.keys()) != required_params:
+                return Response({'ok': False, 'data': ['Incomplete parameters']}, content_type='application/json')
+
             data = []
-            cursor.execute(query, request.data)
+            cursor.execute(query, val)
+            field_names = [e[0] for e in cursor.description]
+
             for row in cursor.fetchall():
-                data.append(row)
+                r = {name: value for name, value in zip(field_names, row)}
+                data.append(r)
 
         return Response({'ok': True, 'data': data}, content_type='application/json')
-
-#        except Exception as e:
-#            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
