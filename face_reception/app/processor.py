@@ -1,20 +1,14 @@
 #!/usr/bin/python3
-import os
-import sys
 import uuid
 import json
 from io import BytesIO
 from PIL import Image, ImageFile
-import subprocess
 
 from run_once import run_once
 from db_wrapper import DB
 from service_exchange import Service_exchange
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
-
-DIR_PATH = os.path.dirname(os.path.realpath(__file__))
-DEMOGRAPHY_SCRIPT = DIR_PATH + "/demograph.py"
 
 def get_demography_from(title):
     try:
@@ -119,12 +113,7 @@ RETURNING file_uuid, get_engine(file_uuid) AS engine, title;
             if not content:
                 break
 
-            try:
-                process = subprocess.Popen([sys.executable, DEMOGRAPHY_SCRIPT],
-                    #stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-                )
-            except Exception as e:
-                print(str(e))
+            se.launch('DEMOGRAPHY')
 
         db.cursor.execute(sql_update, (face_idx, file_uuid))
         db.conn.commit()

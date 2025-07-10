@@ -1,20 +1,14 @@
 #!/usr/bin/python3
-import os
-import sys
 import uuid
 import json
 from io import BytesIO
 from PIL import Image, ImageFile
-import subprocess
 
 from run_once import run_once
 from db_wrapper import DB
 from service_exchange import Service_exchange
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
-
-DIR_PATH = os.path.dirname(os.path.realpath(__file__))
-SIMILARITY_SCRIPT = DIR_PATH + "/similarity.py"
 
 def main():
     se = Service_exchange()
@@ -88,10 +82,7 @@ RETURNING r.face_uuid, get_engine(file_uuid) AS engine;
             db.cursor.execute(sql_update, [json.dumps(data[0]), face_uuid])
             db.conn.commit()
 
-            try:
-                process = subprocess.Popen([sys.executable, SIMILARITY_SCRIPT, '1', 'embedding', 'neighbors', 'cosine', 'demography'])
-            except Exception as e:
-                print(str(e))
+            se.launch('SIMILARITY')
 
     db.close()
 

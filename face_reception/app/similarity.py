@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 import os
-import sys
 import psycopg2
 from run_once import run_once, run_once_pid
 #from dotenv import load_dotenv
@@ -49,7 +48,9 @@ LIMIT 1
     conn.close()
 
 if __name__ == "__main__":
+    import sys
 #    load_dotenv()
+
     if len(sys.argv) == 1:
         run_once(main)
     else:

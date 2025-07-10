@@ -1,7 +1,4 @@
-import os
-import sys
 import uuid
-import subprocess
 
 from fastapi import FastAPI, Form, File, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
@@ -20,9 +17,6 @@ class Event_record(BaseModel):
 
 #from dotenv import load_dotenv
 #load_dotenv()
-
-DIR_PATH = os.path.dirname(os.path.realpath(__file__))
-PROCESSOR_SCRIPT = DIR_PATH + "/processor.py"
 
 class custom_SQL():
     event_keys = ['origin', 'origin_id', 'ts', 'prefix', 'name']
@@ -92,12 +86,7 @@ async def upload_json(
     db.cursor.execute(sql, data)
     db.close()
 
-    try:
-        process = subprocess.Popen([sys.executable, PROCESSOR_SCRIPT],
-            #stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-        )
-    except Exception as e:
-        print(str(e))
+    se.launch('PROCESSOR')
 
     return file_uuid
 

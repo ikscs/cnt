@@ -2,7 +2,20 @@ import requests
 import logging
 from io import BytesIO
 
+import os
+import sys
+import subprocess
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+
+DIR_PATH = os.path.dirname(os.path.realpath(__file__))
+LAUNCHER_SCRIPT = os.path.join(DIR_PATH, 'launcher.py')
+
+scripts = {
+    'PROCESSOR' : ['processor.py'],
+    'SIMILARITY': ['similarity.py', '1', 'embedding', 'neighbors', 'cosine', 'demography'],
+    'DEMOGRAPHY': ['demograph.py'],
+}
 
 class Service_exchange():
     def __init__(self):
@@ -62,6 +75,11 @@ class Service_exchange():
             logging.error(str(err))
             return None
 
+    def launch(self, target):
+        rocket = [sys.executable, LAUNCHER_SCRIPT]
+        rocket.extend(scripts[target])
+
+        subprocess.run(rocket)
 
 if __name__ == "__main__":
     se = Service_exchange()
