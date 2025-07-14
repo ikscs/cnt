@@ -51,7 +51,7 @@ if __name__=='__main__':
     size = sys.argv[1]
     if size[-1] != 'G':
         usage()
-    size_bytes = int(size[:-1])*1024*1024
+    size_bytes = int(size[:-1])*1024*1024*1024
 
     result = remove_it(FOLDER, size_bytes)
     print(result)
