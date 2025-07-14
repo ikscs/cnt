@@ -1,20 +1,26 @@
 import os
 import sys
-import signal
-import subprocess
 
 if __name__ == "__main__":
-    DIR_PATH = os.path.dirname(os.path.realpath(__file__))
+    SCRIPT = os.path.abspath(sys.argv[1])
+    ARGS = [sys.executable, SCRIPT] + sys.argv[2:]
 
-    SCRIPT = os.path.join(DIR_PATH, sys.argv[1])
+    pid = os.fork()
+    if pid > 0:
+        # Parent process exits immediately
+        sys.exit(0)
 
-    rocket = [sys.executable, SCRIPT]
-    rocket.extend(sys.argv[2:])
+    # First child process
+    os.setsid()  # Start a new session
+    pid = os.fork()
+    if pid > 0:
+        # First child exits
+        sys.exit(0)
 
-    if os.name != 'nt':
-        signal.signal(signal.SIGCHLD, signal.SIG_IGN)
-
-    try:
-        process = subprocess.Popen(rocket, start_new_session=True)
-    except Exception as e:
-        print(str(e))
+    print(ARGS)
+    # Second child (daemon)
+    with open(os.devnull, 'wb') as devnull:
+        os.dup2(devnull.fileno(), sys.stdin.fileno())
+        os.dup2(devnull.fileno(), sys.stdout.fileno())
+        os.dup2(devnull.fileno(), sys.stderr.fileno())
+        os.execvp(ARGS[0], ARGS)
