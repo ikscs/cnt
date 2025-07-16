@@ -1,12 +1,18 @@
 import uuid
+import httpx
 
-from fastapi import FastAPI, Form, File, UploadFile
+from fastapi import FastAPI, BackgroundTasks
+from fastapi import Form, File, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel
 from typing import List, Optional
 
 from db_wrapper import DB
 from service_exchange import Service_exchange
+
+from processor import Processor
+from demography import Demography
+from similarity import Similarity
 
 class Event_record(BaseModel):
     origin: str
@@ -28,6 +34,9 @@ class custom_SQL():
         vars_cnt = ','.join(['%s']*len(self.event_keys))
         self.sql_insert_event = f"INSERT INTO event_crossline ({fields}) VALUES({vars_cnt}) ON CONFLICT ({fields}) DO NOTHING"
 
+processor = Processor()
+demography = Demography()
+similarity = Similarity()
 
 app = FastAPI()
 
@@ -62,6 +71,7 @@ async def upload_json(
     contents = await f.read()
 
     se = Service_exchange()
+
     content = se.set_img(file_uuid, contents)
     if not content:
         return None
@@ -86,7 +96,8 @@ async def upload_json(
     db.cursor.execute(sql, data)
     db.close()
 
-    se.launch('PROCESSOR')
+    async with httpx.AsyncClient() as client:
+        response = await client.get(se.service['processor'])
 
     return file_uuid
 
@@ -104,3 +115,18 @@ async def upload_json(
     db.close()
 
     return JSONResponse(content={'result': 'Ok', 'count': len(data)})
+
+@app.get('/processor.json')
+async def processor_json(background_tasks: BackgroundTasks):
+    background_tasks.add_task(processor.execute)
+    return JSONResponse(content={'result': 'Ok'})
+
+@app.get('/demography.json')
+async def demography_json(background_tasks: BackgroundTasks):
+    background_tasks.add_task(demography.execute)
+    return JSONResponse(content={'result': 'Ok'})
+
+@app.get('/similarity.json')
+async def similarity_json(background_tasks: BackgroundTasks):
+    background_tasks.add_task(similarity.execute)
+    return JSONResponse(content={'result': 'Ok'})

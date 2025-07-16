@@ -4,9 +4,10 @@ import json
 from io import BytesIO
 from PIL import Image, ImageFile
 
-from run_once import run_once
 from db_wrapper import DB
 from service_exchange import Service_exchange
+
+from singleton import SingletonMeta
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -28,11 +29,7 @@ def get_demography_from(title):
             del src[k]
     return src
 
-def main():
-    se = Service_exchange()
-    db = DB()
-    db.open()
-
+class Processor(metaclass=SingletonMeta):
     sql_target = '''
 WITH one_row AS (
 SELECT file_uuid FROM incoming
@@ -46,81 +43,96 @@ RETURNING file_uuid, get_engine(file_uuid) AS engine, title;
     sql_insert = "INSERT INTO face_data (face_uuid, file_uuid, face_idx, embedding, facial_area, confidence, demography) VALUES(%s, %s, %s, %s, %s, %s, %s) ON CONFLICT (face_uuid) DO NOTHING"
     sql_update = "UPDATE incoming SET faces_cnt=%s WHERE file_uuid=%s"
 
-    while True:
-        db.cursor.execute(sql_target)
-        res = db.cursor.fetchone()
-        if not res: break
+    def __init__(self):
+        self.se = Service_exchange()
+        self.db = DB()
+        self.lock = False
 
-        file_uuid = res[0]
-        engine_embedding = res[1].get('embedding') if res[1] else None
-        engine_demography = res[1].get('demography') if res[1] else None
-        engine_detection = res[1].get('face_detection') if res[1] else None
-        face_width_px = res[1].get('face_width_px', 0) if res[1] else 0
-        title = res[2]
-        db.conn.commit()
+    def execute(self):
+        if self.lock: return
+        self.lock = True
 
-        if not engine_embedding:
-            continue
+        self.db.open()
 
-        demography = None
-        if not engine_demography:
-            demography = get_demography_from(title)
+        while True:
+            self.db.cursor.execute(sql_target)
+            res = self.db.cursor.fetchone()
+            if not res: break
 
-        content = se.get_img(file_uuid)
-        if not content:
-            continue
+            file_uuid = res[0]
+            engine_embedding = res[1].get('embedding') if res[1] else None
+            engine_demography = res[1].get('demography') if res[1] else None
+            engine_detection = res[1].get('face_detection') if res[1] else None
+            face_width_px = res[1].get('face_width_px', 0) if res[1] else 0
+            title = res[2]
+            self.db.conn.commit()
 
-        file_data = BytesIO(content)
-        files = {'f': (file_uuid, file_data, 'application/octet-stream')}
+            if not engine_embedding:
+                continue
 
-        data = engine_embedding['param'] if engine_embedding['param'] else {}
-        if data.get('area'):
-            data['area'] = max((data['area'], face_width_px))
-        else:
-            data['area'] = face_width_px
+            demography = None
+            if not engine_demography:
+                demography = get_demography_from(title)
 
-        data['fmt'] = 'json'
-        data['backend'] = engine_embedding['backend']
-        data['model'] = engine_embedding['model']
-        url = f"{engine_embedding['entry_point']}/represent.json"
-
-        data = se.post_engine(url, data, files)
-        if not data:
-            continue
-
-        file_data.seek(0)
-        image = Image.open(file_data)
-
-        face_idx = 0
-        for face_idx, row in enumerate(data, 1):
-            if row['face_confidence'] == 0:
-                face_idx = 0
-                break
-            face_uuid = uuid.uuid4().hex
-            values = (face_uuid, file_uuid, face_idx, row['embedding'], json.dumps(row['facial_area']), row['face_confidence'], json.dumps(demography) if demography else None)
-            db.cursor.execute(sql_insert, values)
-            db.conn.commit()
-
-            delta_x = 25 * row['facial_area']['w'] / 100
-            delta_y = 25 * row['facial_area']['h'] / 100
-
-            img = image.crop((row['facial_area']['x'] - delta_x, row['facial_area']['y'] - delta_y, row['facial_area']['x'] + row['facial_area']['w'] + delta_x, row['facial_area']['y'] + row['facial_area']['h'] + delta_y))
-            buffer = BytesIO()
-            img.save(buffer, format='JPEG')
-            buffer.seek(0)
-
-            content = se.set_img(face_uuid, buffer)
+            content = self.se.get_img(file_uuid)
             if not content:
-                break
+                continue
 
-            se.launch('DEMOGRAPHY')
+            file_data = BytesIO(content)
+            files = {'f': (file_uuid, file_data, 'application/octet-stream')}
 
-        db.cursor.execute(sql_update, (face_idx, file_uuid))
-        db.conn.commit()
+            data = engine_embedding['param'] if engine_embedding['param'] else {}
+            if data.get('area'):
+                data['area'] = max((data['area'], face_width_px))
+            else:
+                data['area'] = face_width_px
 
-    db.close()
+            data['fmt'] = 'json'
+            data['backend'] = engine_embedding['backend']
+            data['model'] = engine_embedding['model']
+            url = f"{engine_embedding['entry_point']}/represent.json"
+
+            data = self.se.post_engine(url, data, files)
+            if not data:
+                continue
+
+            file_data.seek(0)
+            image = Image.open(file_data)
+
+            face_idx = 0
+            for face_idx, row in enumerate(data, 1):
+                if row['face_confidence'] == 0:
+                    face_idx = 0
+                    break
+                face_uuid = uuid.uuid4().hex
+                values = (face_uuid, file_uuid, face_idx, row['embedding'], json.dumps(row['facial_area']), row['face_confidence'], json.dumps(demography) if demography else None)
+                self.db.cursor.execute(sql_insert, values)
+                self.db.conn.commit()
+
+                delta_x = 25 * row['facial_area']['w'] / 100
+                delta_y = 25 * row['facial_area']['h'] / 100
+
+                img = image.crop((row['facial_area']['x'] - delta_x, row['facial_area']['y'] - delta_y, row['facial_area']['x'] + row['facial_area']['w'] + delta_x, row['facial_area']['y'] + row['facial_area']['h'] + delta_y))
+                buffer = BytesIO()
+                img.save(buffer, format='JPEG')
+                buffer.seek(0)
+
+                content = self.se.set_img(face_uuid, buffer)
+                if not content:
+                    break
+
+                self.se.launch_service('demography')
+
+            self.db.cursor.execute(self.sql_update, (face_idx, file_uuid))
+            self.db.conn.commit()
+
+        self.db.close()
+
+        self.lock = False
 
 if __name__ == "__main__":
 #    from dotenv import load_dotenv
 #    load_dotenv()
-    run_once(main)
+
+    processor = Processor()
+    processor.execute()

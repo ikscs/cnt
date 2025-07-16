@@ -1,57 +1,50 @@
 #!/usr/bin/python3
-import os
-import psycopg2
-from run_once import run_once, run_once_pid
-#from dotenv import load_dotenv
+from db_wrapper import DB
+from singleton import SingletonMeta
 
-def main(src='embedding', dst='neighbors', method='cosine', demography='demography'):
-    conn = psycopg2.connect(
-        host=os.environ['POSTGRES_HOST'],
-        port=os.environ.get('POSTGRES_PORT'),
-        user=os.environ['POSTGRES_USER'],
-        password=os.environ['POSTGRES_PASSWORD'],
-        dbname=os.environ['POSTGRES_DB']
-    )
-    cur = conn.cursor()
-    schema = os.environ['POSTGRES_SCHEMA']
-
-    sql1 = f'''
-SELECT DISTINCT p.point_id, d.time_slot
-FROM {schema}.face_data d
-LEFT JOIN {schema}.incoming i using(file_uuid)
-LEFT JOIN {schema}.origin o using(origin)
-LEFT JOIN {schema}.point p using(point_id)
+class Similarity(metaclass=SingletonMeta):
+    sql1 = f'''SELECT DISTINCT p.point_id, d.time_slot
+FROM face_data d
+LEFT JOIN incoming i using(file_uuid)
+LEFT JOIN origin o using(origin)
+LEFT JOIN point p using(point_id)
 WHERE point_id IS NOT NULL
 AND time_slot IS NOT NULL
-AND {demography} IS NOT NULL
-AND {src} IS NOT NULL
-AND {dst} IS NULL
+AND demography IS NOT NULL
+AND embedding IS NOT NULL
+AND neighbors IS NULL
 ORDER BY time_slot ASC
-LIMIT 1
+LIMIT 1;
 '''
+    sql2 = f"CALL update_neighbors(%s, %s, %s, %s, %s);"
 
-    sql2 = f"CALL {schema}.update_neighbors(%s, %s, %s, %s, %s);"
+    def __init__(self):
+        self.db = DB()
+        self.lock = False
 
-    while True:
-        cur.execute(sql1)
-        res = cur.fetchone()
-        if not res: break
-        point_id = res[0]
-        time_slot = res[1]
+    def execute(self):
+        if self.lock: return
+        self.lock = True
 
-#        print(point_id, time_slot)
+        self.db.open()
 
-        cur.execute(sql2, [point_id, time_slot, src, dst, method])
-        conn.commit()
+        while True:
+            self.db.cursor.execute(self.db.sql1)
+            res = self.db.cursor.fetchone()
+            if not res: break
+            point_id = res[0]
+            time_slot = res[1]
 
-    cur.close()
-    conn.close()
+            self.db.cursor.execute(self.db.sql2, [point_id, time_slot, 'embedding', 'neighbors', 'cosine'])
+            self.db.conn.commit()
+
+        self.db.close()
+
+        self.lock = False
 
 if __name__ == "__main__":
-    import sys
+#    from dotenv import load_dotenv
 #    load_dotenv()
 
-    if len(sys.argv) == 1:
-        run_once(main)
-    else:
-        run_once_pid(sys.argv[1], main, src=sys.argv[2], dst=sys.argv[3], method=sys.argv[4], demography=sys.argv[5])
+    similarity = Similarity()
+    similarity.execute()

@@ -4,18 +4,8 @@ from io import BytesIO
 
 import os
 import sys
-import subprocess
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
-
-DIR_PATH = os.path.dirname(os.path.realpath(__file__))
-LAUNCHER_SCRIPT = os.path.join(DIR_PATH, 'launcher.py')
-
-scripts = {
-    'PROCESSOR' : ['processor.py'],
-    'SIMILARITY': ['similarity.py', '1', 'embedding', 'neighbors', 'cosine', 'demography'],
-    'DEMOGRAPHY': ['demograph.py'],
-}
 
 class Service_exchange():
     def __init__(self):
@@ -24,6 +14,12 @@ class Service_exchange():
         self.EVENTS_URL = f'{self.RECEPTION}/events.json'
         self.OSD_URL = 'http://camera_pooling:8000/set_osd.json'
         self.KV_DB_URL = 'http://kv_db:5000'
+
+        self.service = {
+            'processor': 'http://localhost:8000/processor.json',
+            'similarity':  'http://localhost:8000/similarity.json',
+            'demography': 'http://localhost:8000/demography.json',
+        }
 
     def checkin(self, origin, origin_id, title, filename, content, ts=None):
         data = {'origin': origin, 'origin_id': origin_id, 'title': title}
@@ -75,11 +71,15 @@ class Service_exchange():
             logging.error(str(err))
             return None
 
-    def launch(self, target):
-        rocket = [sys.executable, LAUNCHER_SCRIPT]
-        rocket.extend(scripts[target])
-
-        subprocess.run(rocket)
+    def launch_service(self, service):
+        url = self.service[service]
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
+            return response.json()
+        except Exception as err:
+            logging.error(str(err))
+            return None
 
 if __name__ == "__main__":
     se = Service_exchange()
