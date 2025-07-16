@@ -17,7 +17,7 @@ USERFRONT_PUBLIC_KEY = {
     "cnt": 'USERFRONT_PUBLIC_KEY_CNT',
 }
 
-TENANTIDS = ['pn46j8wn', '8b6p497b']
+TENANTIDS = ['pn46j8wn', '8b6p497b', 'qbj5q6rn']
 
 ALLOWED_HOSTS = ["*"]
 
@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     "helloworld",
     "authdemo",
     "pcnt",
+    "django_filters",
 ]
 
 REST_FRAMEWORK = {
@@ -43,10 +44,14 @@ REST_FRAMEWORK = {
         'pcnt.authentication.UserfrontAuthentication',
 #        'rest_framework_simplejwt.authentication.JWTAuthentication',
 #        'authdemo.authentication.UserfrontJWTAuthentication',
-    )
+    ),
 #    'DEFAULT_PERMISSION_CLASSES': [
 #        'rest_framework.permissions.IsAuthenticated',
 #    ],
+
+    'DEFAULT_FILTER_BACKENDS': (
+        'django_filters.rest_framework.DjangoFilterBackend',
+    ),
 }
 
 MIDDLEWARE = [
