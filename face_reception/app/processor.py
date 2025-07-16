@@ -55,7 +55,7 @@ RETURNING file_uuid, get_engine(file_uuid) AS engine, title;
         self.db.open()
 
         while True:
-            self.db.cursor.execute(sql_target)
+            self.db.cursor.execute(self.sql_target)
             res = self.db.cursor.fetchone()
             if not res: break
 
@@ -106,7 +106,7 @@ RETURNING file_uuid, get_engine(file_uuid) AS engine, title;
                     break
                 face_uuid = uuid.uuid4().hex
                 values = (face_uuid, file_uuid, face_idx, row['embedding'], json.dumps(row['facial_area']), row['face_confidence'], json.dumps(demography) if demography else None)
-                self.db.cursor.execute(sql_insert, values)
+                self.db.cursor.execute(self.sql_insert, values)
                 self.db.conn.commit()
 
                 delta_x = 25 * row['facial_area']['w'] / 100

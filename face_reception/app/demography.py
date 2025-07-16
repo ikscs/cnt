@@ -86,7 +86,7 @@ RETURNING r.face_uuid, get_engine(file_uuid) AS engine;
                 break
 
             if data:
-                self.db.cursor.execute(sql_update, [json.dumps(data[0]), face_uuid])
+                self.db.cursor.execute(self.sql_update, [json.dumps(data[0]), face_uuid])
                 self.db.conn.commit()
 
                 self.se.launch_service('similarity')

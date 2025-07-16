@@ -29,13 +29,13 @@ LIMIT 1;
         self.db.open()
 
         while True:
-            self.db.cursor.execute(self.db.sql1)
+            self.db.cursor.execute(self.sql1)
             res = self.db.cursor.fetchone()
             if not res: break
             point_id = res[0]
             time_slot = res[1]
 
-            self.db.cursor.execute(self.db.sql2, [point_id, time_slot, 'embedding', 'neighbors', 'cosine'])
+            self.db.cursor.execute(self.sql2, [point_id, time_slot, 'embedding', 'neighbors', 'cosine'])
             self.db.conn.commit()
 
         self.db.close()

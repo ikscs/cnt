@@ -6,3 +6,4 @@ pillow
 uvicorn[standard]
 fastapi==0.98.0
 python-multipart
+httpx
