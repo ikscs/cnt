@@ -2,4 +2,3 @@ flask
 flask-cors
 a2wsgi
 uvicorn[standard]
-shutil
