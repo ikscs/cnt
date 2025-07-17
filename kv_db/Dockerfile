@@ -1,5 +1,10 @@
 FROM python:3-slim
 
+RUN apt-get update && apt-get install -y \
+    mc \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 COPY app/requirements.txt .
@@ -10,4 +15,4 @@ RUN chmod +x *.py
 
 EXPOSE 5000
 
-CMD ["python", "fs_db_wrap.py"]
+CMD ["uvicorn", "fs_db_wrap:asgi_app", "--host", "0.0.0.0", "--port", "5000"]

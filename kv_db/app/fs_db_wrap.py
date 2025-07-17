@@ -1,15 +1,42 @@
 from flask import Flask, request, Response
 from flask_cors import CORS
+from a2wsgi import WSGIMiddleware
 import os
+import subprocess
+import shutil
 
 app = Flask(__name__)
 CORS(app)
-#CORS(app, origins=["https://your-frontend-domain.com"])
+asgi_app = WSGIMiddleware(app)
 
 #from dotenv import load_dotenv
 #load_dotenv()
 
 FOLDER = os.environ['DB_FOLDER']
+
+def safe_run(cmd):
+    try:
+        result = subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
+        status = 200
+        txt = result.stdout
+    except Exception as err:
+        status = 500
+        txt = err.stderr
+    return status, txt
+
+@app.route("/", methods=["GET"])
+def hello():
+    status = 200
+    try:
+        total, used, free = shutil.disk_usage(FOLDER)
+        if free < 50 * 1024 * 1024:
+            txt = 'Low disk space'
+        else:
+            txt = f'healthy Total: {total}, Used: {used}, Free: {free}'
+    except Exception as err:
+        status = 500
+        txt = str(err)
+    return Response(txt, status = status)
 
 @app.route("/set/<key>", methods=["POST"])
 def set_binary(key):
@@ -27,7 +54,6 @@ def set_binary(key):
 
 @app.route("/get/<key>", methods=["GET"])
 def get_binary(key):
-
     try:
         with open(f'{FOLDER}/{key}', 'rb') as file:
             data = file.read()
@@ -40,7 +66,6 @@ def get_binary(key):
 
 @app.route("/del/<key>", methods=["GET"])
 def del_binary(key):
-
     try:
         os.remove(f'{FOLDER}/{key}')
     except Exception as err:
@@ -54,12 +79,7 @@ def erase_binary():
     days = request.form['days']
 
     cmd = f'/app/eraser.py {size} {days}'
-    try:
-        result = os.popen(cmd).read()
-        status = 200
-    except Exception as err:
-        result = str(err)
-        status = 500
+    status, result = safe_run(cmd)
 
     return Response(result, status=status)
 
@@ -68,19 +88,13 @@ def cleanup_storage():
     size = request.form['size']
 
     cmd = f'/app/cleanup.py {size}'
-    try:
-        result = os.popen(cmd).read()
-        status = 200
-    except Exception as err:
-        result = str(err)
-        status = 500
+    status, result = safe_run(cmd)
 
     return Response(result, status=status)
 
 @app.route("/img/<key>", methods=["GET"])
 def get_img(key):
     key = key.split('.')[0]
-
     try:
         with open(f'{FOLDER}/{key}', 'rb') as file:
             data = file.read()
