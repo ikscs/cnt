@@ -70,6 +70,10 @@ router_pcnt.register(r'v_customer_person', VCustomerPersonViewSet, basename='v-c
 from pcnt.views import VCustomerExportViewSet
 router_pcnt.register(r'v_customer_export', VCustomerExportViewSet, basename='v-customer-export')
 
+from pcnt.views import UserCacheViewSet
+router_pcnt.register(r'user_cache', UserCacheViewSet)
+
+
 from pcnt.views import OriginByPointId
 
 from pcnt.views import CallDbFunctionView

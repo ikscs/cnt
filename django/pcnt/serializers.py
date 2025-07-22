@@ -217,3 +217,9 @@ class VCustomerExportSerializer(serializers.ModelSerializer):
     class Meta:
         model = VCustomerExport
         fields = '__all__'
+
+from .models import UserCache
+class UserCacheSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserCache
+        fields = '__all__'

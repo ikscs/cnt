@@ -233,6 +233,12 @@ class VCustomerExportViewSet(PCNTBaseReadOnlyViewSet):
     queryset = VCustomerExport.objects.all()
     serializer_class = VCustomerExportSerializer
 
+from .models import UserCache
+from .serializers import UserCacheSerializer
+class UserCacheViewSet(PCNTBaseViewSet):
+    queryset = UserCache.objects.all()
+    serializer_class = UserCacheSerializer
+
 class CallDbFunctionView(PCNTBaseAPIView):
     def post(self, request):
         func = request.query_params.get("func")

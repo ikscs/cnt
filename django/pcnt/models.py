@@ -292,9 +292,10 @@ class Origin(models.Model):
     point_id = models.ForeignKey('Point', models.DO_NOTHING, blank=True, null=True, db_column='point_id', to_field='point_id')
     origin_type_id = models.ForeignKey('OriginType', models.DO_NOTHING, db_column='origin_type_id', to_field='origin_type_id')
     credentials = models.JSONField(blank=True, null=True)
-    is_enabled = models.BooleanField()
+    is_enabled = models.BooleanField(default=True)
     name = models.TextField(blank=True, null=True)
-    face_width_px = models.SmallIntegerField()
+    face_width_px = models.SmallIntegerField(default=40)
+    poling_period_s = models.IntegerField(default=180)
 
     class Meta:
         managed = False
@@ -391,7 +392,10 @@ class Point(models.Model):
     face_detection = models.ForeignKey(Method, models.DO_NOTHING)
     embedding = models.ForeignKey(Method, models.DO_NOTHING, related_name='point_embedding_set')
     demography = models.ForeignKey(Method, models.DO_NOTHING, related_name='point_demography_set')
-    expiration_time = models.IntegerField()
+    expiration_time = models.IntegerField(default=3)
+    tag = models.TextField(null=True, blank=True, help_text='Класифікація магазинів на откуп клієнта')
+    start_time = models.TimeField(default='09:30:00')
+    end_time = models.TimeField(default='23:00:00')
 
     class Meta:
         managed = False
@@ -532,3 +536,18 @@ class VCustomerExport(models.Model):
     class Meta:
         managed = False
         db_table = 'v_customer_export'
+
+class UserCache(models.Model):
+    id = models.AutoField(primary_key=True)
+    customer_id = models.ForeignKey(Customer, db_column='customer_id', to_field='customer_id', on_delete=models.DO_NOTHING)
+    user_id = models.IntegerField()
+    tenant_id = models.TextField()
+    mode = models.TextField()
+
+    class Meta:
+        managed = False
+        db_table = 'user_cache'
+        unique_together = ('user_id', 'tenant_id', 'mode')
+
+    def __str__(self):
+        return f"UserCache(user_id={self.user_id}, tenant_id={self.tenant_id}, mode={self.mode})"
