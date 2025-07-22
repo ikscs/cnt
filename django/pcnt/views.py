@@ -12,7 +12,7 @@ import json
 
 from django_filters.rest_framework import DjangoFilterBackend
 
-from .base import PCNTBaseViewSet, PCNTBaseAPIView, PCNTBaseActionViewSet, PCNTBaseReadOnlyViewSet
+from .base import PCNTBaseViewSet, PCNTBaseAPIView, PCNTBaseActionViewSet, PCNTBaseReadOnlyViewSet, PCNTBaseNoPkViewSet
 
 from .models import Age, App, Billing, BillingCost, BillingIncome, City, Country, Customer, CustomerToApp, Division, EventCrossline, EventData, FaceData, FaceRefererData, FaceTimeSlot, Form, FormData, FormTag, FormVersion, Incoming, ManagerOrder, Method, Origin, OriginSchedule, OriginType, Osd, PermReport, Person, PersonGroup, Point
 from .serializers import AgeSerializer, AppSerializer, BillingSerializer, BillingCostSerializer, BillingIncomeSerializer, CitySerializer, CountrySerializer, CustomerSerializer, CustomerToAppSerializer, DivisionSerializer, EventCrosslineSerializer, EventDataSerializer, FaceDataSerializer, FaceRefererDataSerializer, FaceTimeSlotSerializer, FormSerializer, FormDataSerializer, FormTagSerializer, FormVersionSerializer, IncomingSerializer, ManagerOrderSerializer, MethodSerializer, OriginSerializer, OriginScheduleSerializer, OriginTypeSerializer, OsdSerializer, PermReportSerializer, PersonSerializer, PersonGroupSerializer, PointSerializer
@@ -141,8 +141,9 @@ class OsdViewSet(PCNTBaseViewSet):
     queryset = Osd.objects.all()
     serializer_class = OsdSerializer
 
-class PermReportViewSet(PCNTBaseViewSet):
-    queryset = PermReport.objects.all()
+class PermReportViewSet(PCNTBaseNoPkViewSet):
+    model_class = PermReport
+    #queryset = PermReport.objects.all()
     serializer_class = PermReportSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['app_id', 'report_id']

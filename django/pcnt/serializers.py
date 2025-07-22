@@ -139,7 +139,8 @@ class OsdSerializer(serializers.ModelSerializer):
 class PermReportSerializer(serializers.ModelSerializer):
     class Meta:
         model = PermReport
-        fields = '__all__'
+        #fields = '__all__'
+        fields = ['app_id', 'report_name', 'query', 'report_config', 'report_description', 'report_id']
 
 class PersonSerializer(serializers.ModelSerializer):
     class Meta:

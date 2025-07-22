@@ -45,7 +45,7 @@ router_pcnt.register(r'origin', OriginViewSet)
 router_pcnt.register(r'origin_schedule', OriginScheduleViewSet)
 router_pcnt.register(r'origin_type', OriginTypeViewSet)
 router_pcnt.register(r'osd', OsdViewSet)
-router_pcnt.register(r'perm_report', PermReportViewSet)
+#router_pcnt.register(r'perm_report', PermReportViewSet)
 router_pcnt.register(r'person', PersonViewSet)
 router_pcnt.register(r'person_group', PersonGroupViewSet)
 router_pcnt.register(r'point', PointViewSet)
@@ -83,6 +83,13 @@ from pcnt.views import ExportVCAViewSetByPoint
 
 from pcnt.views import CallReportView
 
+
+
+
+perm_report_list = PermReportViewSet.as_view({'get': 'list', 'post': 'create',})
+perm_report_detail = PermReportViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy',})
+
+
 urlpatterns = [
     path("api/admin/", admin.site.urls),
     path("api/pcnt/", include(router_pcnt.urls)),
@@ -98,6 +105,9 @@ urlpatterns = [
 
     path('api/pcnt/origin/point/<int:point_id>/', OriginByPointId.as_view(), name='origin-by-point'),
 #    path("api/", include("helloworld.urls")),
+
+    path('api/pcnt/perm_report/', perm_report_list, name='perm_report-list'),
+    path('api/pcnt/perm_report/<str:app_id>/<int:report_id>/', perm_report_detail, name='perm_report-detail'),
 ]
 
 

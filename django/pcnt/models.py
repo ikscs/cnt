@@ -360,6 +360,7 @@ class PermReport(models.Model):
         managed = False
         db_table = 'perm_report'
         db_table_comment = "//report_config\r\n{\r\ncap:tion: 'Отчет 2323',\r\nparams: [\r\n  {name: 'Date1', type: 'datetime'},\r\n  {name: 'Date12, type: 'datetime'},\r\n],\r\nsql: 'select * from cp3.cp_subject_role'\r\n}"
+        unique_together = (('app_id', 'report_id'),)
 
 
 class Person(models.Model):
