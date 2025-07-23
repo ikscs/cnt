@@ -239,6 +239,8 @@ from .serializers import UserCacheSerializer
 class UserCacheViewSet(PCNTBaseViewSet):
     queryset = UserCache.objects.all()
     serializer_class = UserCacheSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['user_id', 'tenant_id', 'mode']
 
 class CallDbFunctionView(PCNTBaseAPIView):
     def post(self, request):
