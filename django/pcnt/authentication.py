@@ -34,7 +34,7 @@ class UserfrontAuthentication(BaseAuthentication):
             return (user, None)
 
         auth_header = request.headers.get('Authorization')
-        if settings.DEBUG and 'SuperMario' in auth_header:
+        if settings.DEBUG and auth_header and 'SuperMario' in auth_header:
             try:
                 payload = json.loads(auth_header)
                 user = FakeUser(payload['tenantId'], payload['userId'], payload.get('userUuid'), payload['mode'])
