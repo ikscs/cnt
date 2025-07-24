@@ -83,6 +83,7 @@ from pcnt.views import ExportVCAViewSetByPoint
 
 from pcnt.views import CallReportView
 
+from pcnt.views import RegisterCustomerView
 
 
 
@@ -95,6 +96,9 @@ urlpatterns = [
     path("api/pcnt/", include(router_pcnt.urls)),
     path("api/f5", CallDbFunctionView.as_view(), name='call-db-function'),
     path("api/report/", CallReportView.as_view(), name='call-report-view'),
+
+    path("api/register_customer/", RegisterCustomerView.as_view(), name='register_customer'),
+
     path("api/hello/", HelloView.as_view(), name='hello'),
     path('api/authdemo/', include('authdemo.urls')),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),

@@ -80,7 +80,7 @@ class Country(models.Model):
 
 
 class Customer(models.Model):
-    customer_id = models.DecimalField(primary_key=True, max_digits=20, decimal_places=0)
+    customer_id = models.AutoField(primary_key=True)
     legal_name = models.TextField()
     address = models.TextField(blank=True, null=True)
     country = models.TextField(blank=True, null=True)
@@ -365,7 +365,7 @@ class PermReport(models.Model):
 
 class Person(models.Model):
     person_id = models.AutoField(primary_key=True)
-    group = models.ForeignKey('PersonGroup', models.DO_NOTHING)
+    group_id = models.ForeignKey('PersonGroup', models.DO_NOTHING, db_column='group_id', to_field='group_id')
     name = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:

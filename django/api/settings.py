@@ -1,5 +1,7 @@
 from pathlib import Path
 import environ
+import json
+import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -17,7 +19,11 @@ USERFRONT_PUBLIC_KEY = {
     "cnt": 'USERFRONT_PUBLIC_KEY_CNT',
 }
 
-TENANTIDS = ['pn46j8wn', '8b6p497b', 'qbj5q6rn']
+TENANTIDS = dict()
+for k, v in os.environ.items():
+    if k.startswith('TENANT'):
+        for k1, v1 in json.loads(v).items():
+            TENANTIDS[k1] = v1
 
 ALLOWED_HOSTS = ["*"]
 

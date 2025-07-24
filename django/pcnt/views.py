@@ -300,3 +300,38 @@ class CallReportView(PCNTBaseAPIView):
                 data.append(r)
 
         return Response({'ok': True, 'data': data}, content_type='application/json')
+
+from .external_api import Userfront
+class RegisterCustomerView(PCNTBaseAPIView):
+    def post(self, request):
+        try:
+            user = request.user
+            input_data = request.data
+            data = [user.tenant_id, user.id, user.mode, input_data['legal_name'], input_data['address'], input_data['country'], input_data['city'], input_data['email']]
+        except Exception as err:
+            return Response('Wrong input data', status=status.HTTP_400_BAD_REQUEST)
+
+        uf = Userfront(user)
+        if uf.error:
+            return Response(uf.error, status=status.HTTP_400_BAD_REQUEST)
+
+        result = uf.set_roles(['admin',])
+        if result != 'Ok':
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            with connections['pcnt'].cursor() as cursor:
+                cursor.execute("SELECT register_customer(%s, %s, %s, %s, %s, %s, %s, %s);", data)
+                row = cursor.fetchone()
+                if not row:
+                    return Response('Customer not created', status=status.HTTP_400_BAD_REQUEST)
+                customer_id = row[0]
+        except Exception as err:
+            return Response(str(err), status=status.HTTP_400_BAD_REQUEST)
+
+        result = uf.set_custom_data({'customer_id': customer_id})
+#        if result != 'Ok':
+#            return Response(result, status=status.HTTP_400_BAD_REQUEST)
+
+        data = {'customer_id': customer_id, 'legal_name': input_data['legal_name'], 'address': input_data['address'], 'country': input_data['country'], 'city': input_data['city'], 'email': input_data['email']}
+        return Response(data, status=status.HTTP_201_CREATED)
