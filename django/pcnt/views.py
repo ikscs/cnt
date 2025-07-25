@@ -329,7 +329,7 @@ class RegisterCustomerView(PCNTBaseAPIView):
         except Exception as err:
             return Response(str(err), status=status.HTTP_400_BAD_REQUEST)
 
-        result = uf.set_custom_data({'customer_id': customer_id})
+        result = uf.set_custom_data({'customer': customer_id})
 #        if result != 'Ok':
 #            return Response(result, status=status.HTTP_400_BAD_REQUEST)
 
