@@ -242,6 +242,15 @@ class UserCacheViewSet(PCNTBaseViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['user_id', 'tenant_id', 'mode']
 
+from .models import Theme
+from .serializers import ThemeSerializer
+class ThemeViewSet(PCNTBaseViewSet):
+    queryset = Theme.objects.all()
+    serializer_class = ThemeSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['app_id']
+
+
 class CallDbFunctionView(PCNTBaseAPIView):
     def post(self, request):
         func = request.query_params.get("func")

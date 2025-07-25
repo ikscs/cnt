@@ -166,6 +166,7 @@ class FaceRefererData(models.Model):
     comment = models.TextField(blank=True, null=True)
     embedding = models.TextField(blank=True, null=True)  # This field type is a guess.
     person_id = models.ForeignKey('Person', models.DO_NOTHING, db_column='person_id')
+    sortord = models.IntegerField(blank=True, null=True)
 
     class Meta:
         managed = False
@@ -552,3 +553,16 @@ class UserCache(models.Model):
 
     def __str__(self):
         return f"UserCache(user_id={self.user_id}, tenant_id={self.tenant_id}, mode={self.mode})"
+
+class Theme(models.Model):
+    id = models.AutoField(primary_key=True)
+    app_id = models.ForeignKey(App, db_column='app_id', to_field='app_id', on_delete=models.DO_NOTHING)
+    name = models.CharField(max_length=255)
+    value = models.JSONField()
+
+    class Meta:
+        managed = False
+        db_table = 'theme'
+
+    def __str__(self):
+        return f"{self.name} ({self.app_id})"

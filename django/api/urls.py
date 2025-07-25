@@ -73,7 +73,6 @@ router_pcnt.register(r'v_customer_export', VCustomerExportViewSet, basename='v-c
 from pcnt.views import UserCacheViewSet
 router_pcnt.register(r'user_cache', UserCacheViewSet)
 
-
 from pcnt.views import OriginByPointId
 
 from pcnt.views import CallDbFunctionView
@@ -85,11 +84,12 @@ from pcnt.views import CallReportView
 
 from pcnt.views import RegisterCustomerView
 
-
-
 perm_report_list = PermReportViewSet.as_view({'get': 'list', 'post': 'create',})
 perm_report_detail = PermReportViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy',})
 
+from pcnt.views import ThemeViewSet
+router_api = DefaultRouter()
+router_api.register(r'theme', ThemeViewSet)
 
 urlpatterns = [
     path("api/admin/", admin.site.urls),
@@ -98,6 +98,7 @@ urlpatterns = [
     path("api/report/", CallReportView.as_view(), name='call-report-view'),
 
     path("api/register_customer/", RegisterCustomerView.as_view(), name='register_customer'),
+    path("api/", include(router_api.urls)),
 
     path("api/hello/", HelloView.as_view(), name='hello'),
     path('api/authdemo/', include('authdemo.urls')),
@@ -113,7 +114,6 @@ urlpatterns = [
     path('api/pcnt/perm_report/', perm_report_list, name='perm_report-list'),
     path('api/pcnt/perm_report/<str:app_id>/<int:report_id>/', perm_report_detail, name='perm_report-detail'),
 ]
-
 
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

@@ -225,3 +225,9 @@ class UserCacheSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserCache
         fields = '__all__'
+
+from .models import Theme
+class ThemeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Theme
+        fields = '__all__'
