@@ -304,21 +304,6 @@ class Origin(models.Model):
         unique_together = (('point', 'id'),)
 
 
-class OriginSchedule(models.Model):
-    origin_id = models.OneToOneField(Origin, models.DO_NOTHING, primary_key=True, db_column='origin_id', to_field='id')
-    start_time = models.TimeField()
-    end_time = models.TimeField()
-    poling_period_s = models.IntegerField()
-    poling_period_min_s = models.IntegerField()
-    poling_period_max_s = models.IntegerField()
-    next_dt = models.DateTimeField()
-    is_enabled = models.BooleanField()
-
-    class Meta:
-        managed = False
-        db_table = 'origin_schedule'
-
-
 class OriginType(models.Model):
     origin_type_id = models.AutoField(primary_key=True)
     name = models.CharField()

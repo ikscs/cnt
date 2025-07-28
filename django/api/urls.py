@@ -9,7 +9,7 @@ from rest_framework_simplejwt.views import (
 )
 
 from rest_framework.routers import DefaultRouter
-from pcnt.views import AgeViewSet, AppViewSet, BillingViewSet, BillingCostViewSet, BillingIncomeViewSet, CityViewSet, CountryViewSet, CustomerViewSet, CustomerToAppViewSet, DivisionViewSet, EventCrosslineViewSet, EventDataViewSet, FaceDataViewSet, FaceRefererDataViewSet, FaceTimeSlotViewSet, FormViewSet, FormDataViewSet, FormTagViewSet, FormVersionViewSet, IncomingViewSet, ManagerOrderViewSet, MethodViewSet, OriginViewSet, OriginScheduleViewSet, OriginTypeViewSet, OsdViewSet, PermReportViewSet, PersonViewSet, PersonGroupViewSet, PointViewSet
+from pcnt.views import AgeViewSet, AppViewSet, BillingViewSet, BillingCostViewSet, BillingIncomeViewSet, CityViewSet, CountryViewSet, CustomerViewSet, CustomerToAppViewSet, DivisionViewSet, EventCrosslineViewSet, EventDataViewSet, FaceDataViewSet, FaceRefererDataViewSet, FaceTimeSlotViewSet, FormViewSet, FormDataViewSet, FormTagViewSet, FormVersionViewSet, IncomingViewSet, ManagerOrderViewSet, MethodViewSet, OriginViewSet, OriginTypeViewSet, OsdViewSet, PermReportViewSet, PersonViewSet, PersonGroupViewSet, PointViewSet
 from pcnt.views import ParamViewSet
 from pcnt.views import HostContainerStatusViewSet, HostDiskUsageViewSet
 from pcnt.views import MetricViewSet, MetricHistoryViewSet
@@ -42,7 +42,6 @@ router_pcnt.register(r'incoming', IncomingViewSet)
 router_pcnt.register(r'manager_order', ManagerOrderViewSet)
 router_pcnt.register(r'method', MethodViewSet)
 router_pcnt.register(r'origin', OriginViewSet)
-router_pcnt.register(r'origin_schedule', OriginScheduleViewSet)
 router_pcnt.register(r'origin_type', OriginTypeViewSet)
 router_pcnt.register(r'osd', OsdViewSet)
 #router_pcnt.register(r'perm_report', PermReportViewSet)

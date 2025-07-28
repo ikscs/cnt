@@ -14,8 +14,8 @@ from django_filters.rest_framework import DjangoFilterBackend
 
 from .base import PCNTBaseViewSet, PCNTBaseAPIView, PCNTBaseActionViewSet, PCNTBaseReadOnlyViewSet, PCNTBaseNoPkViewSet
 
-from .models import Age, App, Billing, BillingCost, BillingIncome, City, Country, Customer, CustomerToApp, Division, EventCrossline, EventData, FaceData, FaceRefererData, FaceTimeSlot, Form, FormData, FormTag, FormVersion, Incoming, ManagerOrder, Method, Origin, OriginSchedule, OriginType, Osd, PermReport, Person, PersonGroup, Point
-from .serializers import AgeSerializer, AppSerializer, BillingSerializer, BillingCostSerializer, BillingIncomeSerializer, CitySerializer, CountrySerializer, CustomerSerializer, CustomerToAppSerializer, DivisionSerializer, EventCrosslineSerializer, EventDataSerializer, FaceDataSerializer, FaceRefererDataSerializer, FaceTimeSlotSerializer, FormSerializer, FormDataSerializer, FormTagSerializer, FormVersionSerializer, IncomingSerializer, ManagerOrderSerializer, MethodSerializer, OriginSerializer, OriginScheduleSerializer, OriginTypeSerializer, OsdSerializer, PermReportSerializer, PersonSerializer, PersonGroupSerializer, PointSerializer
+from .models import Age, App, Billing, BillingCost, BillingIncome, City, Country, Customer, CustomerToApp, Division, EventCrossline, EventData, FaceData, FaceRefererData, FaceTimeSlot, Form, FormData, FormTag, FormVersion, Incoming, ManagerOrder, Method, Origin, OriginType, Osd, PermReport, Person, PersonGroup, Point
+from .serializers import AgeSerializer, AppSerializer, BillingSerializer, BillingCostSerializer, BillingIncomeSerializer, CitySerializer, CountrySerializer, CustomerSerializer, CustomerToAppSerializer, DivisionSerializer, EventCrosslineSerializer, EventDataSerializer, FaceDataSerializer, FaceRefererDataSerializer, FaceTimeSlotSerializer, FormSerializer, FormDataSerializer, FormTagSerializer, FormVersionSerializer, IncomingSerializer, ManagerOrderSerializer, MethodSerializer, OriginSerializer, OriginTypeSerializer, OsdSerializer, PermReportSerializer, PersonSerializer, PersonGroupSerializer, PointSerializer
 
 class AgeViewSet(PCNTBaseViewSet):
     queryset = Age.objects.all()
@@ -128,10 +128,6 @@ class OriginByPointId(PCNTBaseAPIView):
         records = Origin.objects.filter(point_id=point_id)
         serializer = OriginSerializer(records, many=True)
         return Response(serializer.data)
-
-class OriginScheduleViewSet(PCNTBaseViewSet):
-    queryset = OriginSchedule.objects.all()
-    serializer_class = OriginScheduleSerializer
 
 class OriginTypeViewSet(PCNTBaseViewSet):
     queryset = OriginType.objects.all()

@@ -2,7 +2,7 @@
 from rest_framework import serializers
 from django.db import transaction, IntegrityError
 
-from .models import Age, App, Billing, BillingCost, BillingIncome, City, Country, Customer, CustomerToApp, Division, EventCrossline, EventData, FaceData, FaceRefererData, FaceTimeSlot, Form, FormData, FormTag, FormVersion, Incoming, ManagerOrder, Method, Origin, OriginSchedule, OriginType, Osd, PermReport, Person, PersonGroup, Point
+from .models import Age, App, Billing, BillingCost, BillingIncome, City, Country, Customer, CustomerToApp, Division, EventCrossline, EventData, FaceData, FaceRefererData, FaceTimeSlot, Form, FormData, FormTag, FormVersion, Incoming, ManagerOrder, Method, Origin, OriginType, Osd, PermReport, Person, PersonGroup, Point
 from .fields import Base64BinaryField
 
 class AgeSerializer(serializers.ModelSerializer):
@@ -120,11 +120,6 @@ class MethodSerializer(serializers.ModelSerializer):
 class OriginSerializer(serializers.ModelSerializer):
     class Meta:
         model = Origin
-        fields = '__all__'
-
-class OriginScheduleSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = OriginSchedule
         fields = '__all__'
 
 class OriginTypeSerializer(serializers.ModelSerializer):
