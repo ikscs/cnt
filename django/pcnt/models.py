@@ -501,9 +501,11 @@ class VCustomerOrigin(models.Model):
 
 class VCustomerPerson(models.Model):
     customer_id = models.IntegerField(null=True)
+    group_name = models.CharField(max_length=255, blank=True, null=True)
     person_id = models.AutoField(primary_key=True)
     group_id = models.IntegerField()
     name = models.CharField(max_length=255, null=True, blank=True)
+    photo = models.BinaryField()
 
     class Meta:
         managed = False
