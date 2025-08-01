@@ -1,6 +1,6 @@
 from django.db import models
 from django.db.models import Value, Expression
-
+from django.contrib.postgres.fields import ArrayField
 
 class Age(models.Model):
     age_id = models.AutoField(primary_key=True)
@@ -164,7 +164,7 @@ class FaceRefererData(models.Model):
     face_uuid = models.CharField(primary_key=True)
     photo = models.BinaryField()
     comment = models.TextField(blank=True, null=True)
-    embedding = models.TextField(blank=True, null=True)  # This field type is a guess.
+    embedding = ArrayField(models.FloatField(), null=True, blank=True, default=None)
     person_id = models.ForeignKey('Person', models.DO_NOTHING, db_column='person_id')
     sortord = models.IntegerField(blank=True, null=True)
 
