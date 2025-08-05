@@ -320,7 +320,7 @@ class RegisterCustomerView(PCNTBaseAPIView):
         if uf.error:
             return Response(uf.error, status=status.HTTP_400_BAD_REQUEST)
 
-        result = uf.set_roles(['admin',])
+        result = uf.set_roles(['admin', 'viewer'])
         if result != 'Ok':
             return Response(result, status=status.HTTP_400_BAD_REQUEST)
 
