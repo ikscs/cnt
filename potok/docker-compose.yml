@@ -1,0 +1,8 @@
+services:
+  potok:
+    build: .
+    container_name: potok
+    volumes:
+      - ./app:/app
+    env_file: ../.env
+#    restart: always

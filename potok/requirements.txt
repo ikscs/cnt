@@ -1,0 +1,10 @@
+psycopg2-binary
+mediapipe
+imagehash
+opencv-python
+Pillow
+requests
+onvif_zeep
+onvif2-zeep
+urllib3
+python-dotenv
