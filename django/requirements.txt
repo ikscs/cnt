@@ -8,3 +8,4 @@ psycopg2-binary
 gunicorn
 requests
 PyJWT[crypto]
+git+https://github.com/liqpay/sdk-python#egg=liqpay-python
