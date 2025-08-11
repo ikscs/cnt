@@ -90,9 +90,7 @@ class PayCallbackView(View):
         signature = request.POST.get('signature')
         sign = liqpay.str_to_sign(settings.LIQPAY['PRIVATE_KEY'] + data + settings.LIQPAY['PRIVATE_KEY'])
         response = liqpay.decode_data_from_str(data)
-        print('callback data', response)
         if sign == signature:
-            print('callback is valid')
             with connections['pcnt'].cursor() as cursor:
                 query = f'UPDATE billing.test_order SET data=%s WHERE order_id=%s'
                 cursor.execute(query, [json.dumps(response), response.get('order_id')])
