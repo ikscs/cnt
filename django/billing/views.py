@@ -11,6 +11,8 @@ from rest_framework import status
 from django.db import connections
 import json
 
+from pcnt.base import PCNTBaseAPIView
+
 from liqpay import LiqPay
 
 class PayView(View):
@@ -38,7 +40,7 @@ sandbox_token	Успішна оплата по токену
             'sandbox': settings.LIQPAY['SANDBOX'], # sandbox mode, set to 1 to enable it
             'server_url': settings.LIQPAY['CALLBACK'],
             'result_url': settings.LIQPAY['RESULT_URL'],
-         }
+        }
 
         rows = []
         field_names = []
@@ -64,6 +66,7 @@ sandbox_token	Успішна оплата по токену
                     data = liqpay.cnb_data(params)
 
                     form_html = f'''
+<a href="/api/pay-liqpay/?order_id={row['order_id']}">Pay Now</a>
 <form method="POST" action="https://www.liqpay.ua/api/3/checkout" accept-charset="utf-8">
 <input type="hidden" name="data" value="{data}">
 <input type="hidden" name="signature" value="{signature}">
@@ -94,6 +97,51 @@ class PayCallbackView(View):
                 query = f'UPDATE billing.test_order SET result=%s, status=%s, data=%s WHERE order_id=%s'
                 cursor.execute(query, [response.get('result'), response.get('status'), json.dumps(response), response.get('order_id')])
         return HttpResponse()
+
+class PaymentLiqpayView(APIView):
+    def get(self, request, *args, **kwargs):
+        order_id = request.query_params.get('order_id')
+
+        if not order_id:
+            return Response({'error': 'Missing order_id'}, status=status.HTTP_400_BAD_REQUEST)
+
+        field_names = []
+        with connections['pcnt'].cursor() as cursor:
+            query = "SELECT amount, currency, description FROM billing.test_order WHERE order_id=%s;"
+            cursor.execute(query, [order_id,])
+
+            row = cursor.fetchone()
+            if not row:
+                return Response({'error': f'Not found {order_id}'}, status=status.HTTP_400_BAD_REQUEST)
+
+            amount = row[0]
+            currency = row[1]
+            description = row[2]
+
+        liqpay = LiqPay(settings.LIQPAY['PUBLIC_KEY'], settings.LIQPAY['PRIVATE_KEY'])
+        params = {
+            'action': 'pay',
+            'amount': amount,
+            'currency': currency,
+            'description': description,
+            'order_id': order_id,
+            'version': '3',
+            'sandbox': settings.LIQPAY['SANDBOX'], # sandbox mode, set to 1 to enable it
+            'server_url': settings.LIQPAY['CALLBACK'],
+            'result_url': settings.LIQPAY['RESULT_URL'],
+        }
+        signature = liqpay.cnb_signature(params)
+        data = liqpay.cnb_data(params)
+
+        html = f'''
+<html><body onload="document.forms[0].submit()">
+<form method="POST" action="https://www.liqpay.ua/api/3/checkout" accept-charset="utf-8">
+<input type="hidden" name="data" value="{data}">
+<input type="hidden" name="signature" value="{signature}">
+</form>
+</body></html>'''
+
+        return Response(html, status=status.HTTP_200_OK)
 
 class PaymentStatusView(APIView):
     def get(self, request, *args, **kwargs):

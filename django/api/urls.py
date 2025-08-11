@@ -117,12 +117,14 @@ urlpatterns = [
 from billing.views import PayView, PayCallbackView
 from billing.views import PaymentStatusView
 from billing.views import PaymentResultView
+from billing.views import PaymentLiqpayView
 
 urlpatterns.extend([
     path('api/pay/', PayView.as_view(), name='pay_view'),
     path('api/pay-callback/', PayCallbackView.as_view(), name='pay_callback'),
     path('api/payment-status/', PaymentStatusView.as_view(), name='payment-status'),
     path('api/pay-result/', PaymentResultView.as_view(), name='payment-result'),
+    path('api/pay-liqpay/', PaymentLiqpayView.as_view(), name='payment-liqpay'),
 ])
 
 if settings.DEBUG:
