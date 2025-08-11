@@ -45,7 +45,7 @@ sandbox_token	Успішна оплата по токену
         rows = []
         field_names = []
         with connections['pcnt'].cursor() as cursor:
-            query = "SELECT order_id, amount, currency, description, result, status, data FROM billing.test_order;"
+            query = "SELECT order_id, amount, currency, description, data FROM billing.test_order;"
             cursor.execute(query)
             field_names = [e[0] for e in cursor.description]
             for row in cursor.fetchall():
@@ -94,8 +94,8 @@ class PayCallbackView(View):
         if sign == signature:
             print('callback is valid')
             with connections['pcnt'].cursor() as cursor:
-                query = f'UPDATE billing.test_order SET result=%s, status=%s, data=%s WHERE order_id=%s'
-                cursor.execute(query, [response.get('result'), response.get('status'), json.dumps(response), response.get('order_id')])
+                query = f'UPDATE billing.test_order SET data=%s WHERE order_id=%s'
+                cursor.execute(query, [json.dumps(response), response.get('order_id')])
         return HttpResponse()
 
 class PaymentLiqpayView(APIView):
@@ -141,7 +141,7 @@ class PaymentLiqpayView(APIView):
 </form>
 </body></html>'''
 
-        return Response(html, status=status.HTTP_200_OK)
+        return HttpResponse(html)
 
 class PaymentStatusView(APIView):
     def get(self, request, *args, **kwargs):
@@ -162,8 +162,8 @@ class PaymentStatusView(APIView):
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         with connections['pcnt'].cursor() as cursor:
-            query = f'UPDATE billing.test_order SET result=%s, status=%s, data=%s WHERE order_id=%s'
-            cursor.execute(query, [res.get('result'), res.get('status'), json.dumps(res), order_id])
+            query = f'UPDATE billing.test_order SET data=%s WHERE order_id=%s'
+            cursor.execute(query, [json.dumps(res), order_id])
 
         return Response(res, status=status.HTTP_200_OK)
 
