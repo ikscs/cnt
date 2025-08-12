@@ -84,10 +84,17 @@ WSGI_APPLICATION = "api.wsgi.application"
 #        "NAME": BASE_DIR / "db.sqlite3",
 #    }
 #}
+
+#2do: Remove it
+PCNT_DATABASE = env.db('PCNT_DATABASE_URL')
+if 'billing' not in PCNT_DATABASE['OPTIONS']['options']:
+    PCNT_DATABASE['OPTIONS']['options'] += ',billing'
+
 DATABASES = {
     'default': env.db('DATABASE_URL'),
     'sqlite': env.db('SQLITE_DATABASE_URL'),
-    'pcnt': env.db('PCNT_DATABASE_URL'),
+    'pcnt': PCNT_DATABASE,
+#     'pcnt': env.db('PCNT_DATABASE_URL')
 }
 
 DATABASE_ROUTERS = ['api.dbrouters.PcntRouter']

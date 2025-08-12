@@ -4,6 +4,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views import View
 
+from rest_framework import viewsets
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -11,9 +12,24 @@ from rest_framework import status
 from django.db import connections
 import json
 
-from pcnt.base import PCNTBaseAPIView
+from pcnt.base import PCNTBaseViewSet, PCNTBaseAPIView
+
+from .models import Balance
+from .serializers import BalanceSerializer
 
 from liqpay import LiqPay
+
+liqpay_params = {
+    'action': 'pay',
+    'amount': '0.01',
+    'currency': 'USD',
+    'description': '',
+    'order_id': 0,
+    'version': '3',
+    'sandbox': settings.LIQPAY['SANDBOX'],
+    'server_url': settings.LIQPAY['CALLBACK'],
+}
+ORDER_TABLE = 'billing.test_order'
 
 class PayView(View):
     header = '''<html><body><pre>
@@ -30,34 +46,24 @@ sandbox_token	Успішна оплата по токену
 
     def get(self, request, *args, **kwargs):
         liqpay = LiqPay(settings.LIQPAY['PUBLIC_KEY'], settings.LIQPAY['PRIVATE_KEY'])
-        params = {
-            'action': 'pay',
-            'amount': '100',
-            'currency': 'USD',
-            'description': 'Payment for clothes',
-            'order_id': 'order_id_6',
-            'version': '3',
-            'sandbox': settings.LIQPAY['SANDBOX'], # sandbox mode, set to 1 to enable it
-            'server_url': settings.LIQPAY['CALLBACK'],
-            'result_url': settings.LIQPAY['RESULT_URL'],
-        }
+        params = liqpay_params
 
         rows = []
         field_names = []
         with connections['pcnt'].cursor() as cursor:
-            query = "SELECT order_id, amount, currency, description, data FROM billing.test_order;"
+            query = f'SELECT order_id, amount, currency, description, data FROM {ORDER_TABLE};'
             cursor.execute(query)
             field_names = [e[0] for e in cursor.description]
             for row in cursor.fetchall():
                 r = {name: value for name, value in zip(field_names, row)}
                 rows.append(r)
 
-        result = "<table border=\"1\"><tr>"
+        result = '<table border="1"><tr>'
         for name in field_names:
-            result += f"<th>{name}</th>"
-        result += "</tr>\n<tbody>"
+            result += f'<th>{name}</th>'
+        result += '</tr>\n<tbody>'
         for row in rows:
-            result += "<tr>"
+            result += '<tr>'
             for k, v in row.items():
                 if k == 'order_id':
                     for e in ['order_id', 'amount', 'currency', 'description']:
@@ -66,19 +72,19 @@ sandbox_token	Успішна оплата по токену
                     data = liqpay.cnb_data(params)
 
                     form_html = f'''
-<a href="/api/pay-liqpay/?order_id={row['order_id']}">Pay Now</a>
+<a href="/api/billing/pay_liqpay/?order_id={row['order_id']}" target="_blank">Pay Now</a>
 <form method="POST" action="https://www.liqpay.ua/api/3/checkout" accept-charset="utf-8">
 <input type="hidden" name="data" value="{data}">
 <input type="hidden" name="signature" value="{signature}">
 <input type="submit" value="Pay Now">
 </form>
-<a href="/api/payment-status/?order_id={row['order_id']}">Check status</a>
+<a href="/api/billing/pay_status/?order_id={row['order_id']}">Check status</a>
 '''
-                    result += f"<td>{v}{form_html}</td>"
+                    result += f'<td>{v}{form_html}</td>'
                 else:
-                    result += f"<td>{v}</td>"
-            result += "</tr>"
-        result += "</tbody></table>"
+                    result += f'<td>{v}</td>'
+            result += '</tr>'
+        result += '</tbody></table>'
 
         return HttpResponse(f'{self.header}{result}{self.footer}')
 
@@ -92,7 +98,7 @@ class PayCallbackView(View):
         response = liqpay.decode_data_from_str(data)
         if sign == signature:
             with connections['pcnt'].cursor() as cursor:
-                query = f'UPDATE billing.test_order SET data=%s WHERE order_id=%s'
+                query = f'UPDATE {ORDER_TABLE} SET data=%s WHERE order_id=%s'
                 cursor.execute(query, [json.dumps(response), response.get('order_id')])
         return HttpResponse()
 
@@ -105,7 +111,7 @@ class PaymentLiqpayView(APIView):
 
         field_names = []
         with connections['pcnt'].cursor() as cursor:
-            query = "SELECT amount, currency, description FROM billing.test_order WHERE order_id=%s;"
+            query = f'SELECT amount, currency, description FROM {ORDER_TABLE} WHERE order_id=%s;'
             cursor.execute(query, [order_id,])
 
             row = cursor.fetchone()
@@ -124,9 +130,8 @@ class PaymentLiqpayView(APIView):
             'description': description,
             'order_id': order_id,
             'version': '3',
-            'sandbox': settings.LIQPAY['SANDBOX'], # sandbox mode, set to 1 to enable it
+            'sandbox': settings.LIQPAY['SANDBOX'],
             'server_url': settings.LIQPAY['CALLBACK'],
-            'result_url': settings.LIQPAY['RESULT_URL'],
         }
         signature = liqpay.cnb_signature(params)
         data = liqpay.cnb_data(params)
@@ -136,6 +141,7 @@ class PaymentLiqpayView(APIView):
 <form method="POST" action="https://www.liqpay.ua/api/3/checkout" accept-charset="utf-8">
 <input type="hidden" name="data" value="{data}">
 <input type="hidden" name="signature" value="{signature}">
+<input type="submit" value="Pay Now">
 </form>
 </body></html>'''
 
@@ -151,16 +157,16 @@ class PaymentStatusView(APIView):
         liqpay = LiqPay(settings.LIQPAY['PUBLIC_KEY'], settings.LIQPAY['PRIVATE_KEY'])
 
         try:
-            res = liqpay.api("request", {
-                "action": "status",
-                "version": "3",
-                "order_id": order_id,
+            res = liqpay.api('request', {
+                'action': 'status',
+                'version': '3',
+                'order_id': order_id,
             })
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         with connections['pcnt'].cursor() as cursor:
-            query = f'UPDATE billing.test_order SET data=%s WHERE order_id=%s'
+            query = f'UPDATE {ORDER_TABLE} SET data=%s WHERE order_id=%s'
             cursor.execute(query, [json.dumps(res), order_id])
 
         return Response(res, status=status.HTTP_200_OK)
@@ -169,3 +175,7 @@ class PaymentResultView(APIView):
     def get(self, request, *args, **kwargs):
         data = {'result': 'After payment page'}
         return Response(data, status=status.HTTP_200_OK)
+
+class BalanceViewSet(PCNTBaseViewSet):
+    queryset = Balance.objects.all()
+    serializer_class = BalanceSerializer
