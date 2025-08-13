@@ -127,3 +127,6 @@ for k, v in os.environ.items():
     if k.startswith('LIQPAY_'):
         k = k.split('_', 1)[-1]
         LIQPAY[k] = v
+
+TIME_ZONE = 'Europe/Kyiv'
+USE_TZ = True
