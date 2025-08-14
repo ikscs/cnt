@@ -14,9 +14,6 @@ import json
 
 from pcnt.base import PCNTBaseViewSet, PCNTBaseAPIView
 
-from .models import Balance
-from .serializers import BalanceSerializer
-
 from liqpay import LiqPay
 
 liqpay_params = {
@@ -29,6 +26,9 @@ liqpay_params = {
     'sandbox': settings.LIQPAY['SANDBOX'],
     'server_url': settings.LIQPAY['CALLBACK'],
 }
+if settings.LIQPAY.get('RESULT_URL'):
+    liqpay_params['result_url'] = settings.LIQPAY['RESULT_URL']
+
 ORDER_TABLE = 'billing.test_order'
 
 class PayView(View):
@@ -123,16 +123,12 @@ class PaymentLiqpayView(APIView):
             description = row[2]
 
         liqpay = LiqPay(settings.LIQPAY['PUBLIC_KEY'], settings.LIQPAY['PRIVATE_KEY'])
-        params = {
-            'action': 'pay',
-            'amount': amount,
-            'currency': currency,
-            'description': description,
-            'order_id': order_id,
-            'version': '3',
-            'sandbox': settings.LIQPAY['SANDBOX'],
-            'server_url': settings.LIQPAY['CALLBACK'],
-        }
+        params = liqpay_params
+        params['amount'] = amount
+        params['currency'] = currency
+        params['description'] = description
+        params['order_id'] = order_id
+
         signature = liqpay.cnb_signature(params)
         data = liqpay.cnb_data(params)
 
@@ -171,11 +167,29 @@ class PaymentStatusView(APIView):
 
         return Response(res, status=status.HTTP_200_OK)
 
-class PaymentResultView(APIView):
+class PaymentResultView(View):
     def get(self, request, *args, **kwargs):
-        data = {'result': 'After payment page'}
-        return Response(data, status=status.HTTP_200_OK)
+        data = '''<!DOCTYPE html>
+<html>
+<head>
+  <title>Thank You!</title>
+  <meta charset="utf-8">
+</head>
+<body>
+  <h1>Дякуємо, що Ви з нами.</h1>
+  Сторінку оплати можна закрити
+</body>
+</html>'''
+        return HttpResponse(data)
 
+from .models import Balance
+from .serializers import BalanceSerializer
 class BalanceViewSet(PCNTBaseViewSet):
     queryset = Balance.objects.all()
     serializer_class = BalanceSerializer
+
+from .models import TestOrder
+from .serializers import TestOrderSerializer
+class TestOrderViewSet(viewsets.ModelViewSet):
+    queryset = TestOrder.objects.all()
+    serializer_class = TestOrderSerializer

@@ -1,10 +1,12 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
-from .views import PayView, PayCallbackView, PaymentLiqpayView, PaymentStatusView, PaymentResultView, BalanceViewSet
+from .views import PayView, PayCallbackView, PaymentLiqpayView, PaymentStatusView, PaymentResultView
+from .views import BalanceViewSet, TestOrderViewSet
 
 router = DefaultRouter()
 router.register(r'balance', BalanceViewSet)
+router.register(r'test_order', TestOrderViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
@@ -14,4 +16,3 @@ urlpatterns = [
     path('pay_result/', PaymentResultView.as_view(), name='pay_result'),
     path('pay_liqpay/', PaymentLiqpayView.as_view(), name='pay_liqpay'),
 ]
-
