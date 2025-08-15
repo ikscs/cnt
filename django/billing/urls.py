@@ -2,11 +2,12 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
 from .views import PayView, PayCallbackView, PaymentLiqpayView, PaymentStatusView, PaymentResultView
-from .views import BalanceViewSet, TestOrderViewSet
+from .views import BalanceViewSet, TestOrderViewSet, SubscriptionBasePriceViewSet
 
 router = DefaultRouter()
 router.register(r'balance', BalanceViewSet)
 router.register(r'test_order', TestOrderViewSet)
+router.register(r'subscription_base_price', SubscriptionBasePriceViewSet, basename='subscriptionbaseprice')
 
 urlpatterns = [
     path('', include(router.urls)),

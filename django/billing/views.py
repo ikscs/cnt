@@ -193,3 +193,9 @@ from .serializers import TestOrderSerializer
 class TestOrderViewSet(viewsets.ModelViewSet):
     queryset = TestOrder.objects.all()
     serializer_class = TestOrderSerializer
+
+from .models import SubscriptionBasePrice
+from .serializers import SubscriptionBasePriceSerializer
+class SubscriptionBasePriceViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = SubscriptionBasePrice.objects.all()
+    serializer_class = SubscriptionBasePriceSerializer

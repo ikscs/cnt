@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Balance, TestOrder
+from .models import Balance, TestOrder, SubscriptionBasePrice
 
 class BalanceSerializer(serializers.ModelSerializer):
     class Meta:
@@ -9,4 +9,9 @@ class BalanceSerializer(serializers.ModelSerializer):
 class TestOrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = TestOrder
+        fields = '__all__'
+
+class SubscriptionBasePriceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SubscriptionBasePrice
         fields = '__all__'

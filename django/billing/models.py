@@ -28,3 +28,12 @@ class TestOrder(models.Model):
 
     def __str__(self):
         return f"Order {self.order_id}"
+
+class SubscriptionBasePrice(models.Model):
+    id = models.AutoField(primary_key=True)
+    crn = models.TextField()
+    value = models.FloatField()
+
+    class Meta:
+        db_table = 'subscription_base_price'
+        managed = False
