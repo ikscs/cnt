@@ -12,7 +12,7 @@ from rest_framework import status
 from django.db import connections
 import json
 
-from pcnt.base import PCNTBaseViewSet, PCNTBaseAPIView
+from pcnt.base import PCNTBaseViewSet, PCNTBaseAPIView, PCNTBaseReadOnlyViewSet
 
 from liqpay import LiqPay
 
@@ -196,6 +196,6 @@ class TestOrderViewSet(viewsets.ModelViewSet):
 
 from .models import SubscriptionBasePrice
 from .serializers import SubscriptionBasePriceSerializer
-class SubscriptionBasePriceViewSet(viewsets.ReadOnlyModelViewSet):
+class SubscriptionBasePriceViewSet(PCNTBaseReadOnlyViewSet):
     queryset = SubscriptionBasePrice.objects.all()
     serializer_class = SubscriptionBasePriceSerializer
