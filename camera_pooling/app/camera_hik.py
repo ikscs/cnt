@@ -11,6 +11,8 @@ class Camera(Client):
         self.port = credentials['port']
         self.user = credentials['user']
         self.password = credentials['password']
+        self.chanel = credentials.get('chanel', 1)
+
         self.url = f"{self.proto}://{self.ip}:{self.port}"
         try:
             super().__init__(self.url, self.user, self.password)
@@ -36,6 +38,11 @@ class Camera(Client):
 
     def make_ISAPI_PUT(self, url, data):
         response = requests.put(f'{self.url}{url}', data=data, auth=HTTPDigestAuth(self.user, self.password), headers={'Content-Type': 'application/xml'}, verify=False)
+        result = xmltodict.parse(response.text)
+        return result
+
+    def make_ISAPI_get(self, url):
+        response = requests.get(f'{self.url}{url}', auth=HTTPDigestAuth(self.user, self.password), verify=False)
         result = xmltodict.parse(response.text)
         return result
 

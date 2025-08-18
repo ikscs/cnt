@@ -41,7 +41,7 @@ def hik_runner(credentials, origin, origin_id, last_dt, params):
     data = f'''
 <CMSearchDescription>
 <searchID>{uuid.uuid4()}</searchID>
-<trackIDList><trackID>103</trackID></trackIDList>
+<trackIDList><trackID>{camera.chanel}03</trackID></trackIDList>
 <timeSpanList>
 <timeSpan><startTime>{start_time}</startTime>
 <endTime>{end_time}</endTime>
@@ -108,7 +108,6 @@ def hik_runner(credentials, origin, origin_id, last_dt, params):
         if 'max_size' in params:
             if camera.media['size'] > params['max_size']:
                 continue
-
         if 'file_mask' in params:
             if params['file_mask'] not in camera.media['name']:
                 continue
@@ -136,11 +135,16 @@ if __name__ == "__main__":
     from dotenv import dotenv_values
 
     credentials = dotenv_values('.env_hik')
+#    credentials = dotenv_values('.env_hik_camera')
+
     origin = 'sezon_FF_1'
     origin_id = 19
     last_dt = datetime.now() + timedelta(seconds=-36000)
 
     params = {"event": "LineDetection", "max_size": 1000000, "min_size": 500000, "file_mask": "lineCrossCap"}
+    params = {"event": "LineDetection", "max_size": 1000000, "min_size": 5000, "file_mask": "lineCrossCap"}
+    params = {"event": "allPic", "max_size": 1000000, "min_size": 5000, "file_mask": ""}#OK
+    params = {"event": "LineDetection", "max_size": 1000000, "min_size": 5000, "file_mask": ""}
 
     count, end_time = hik_runner(credentials, origin, origin_id, last_dt, params)
     print(count, end_time)
