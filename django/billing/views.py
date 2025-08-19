@@ -200,6 +200,18 @@ class SubscriptionBasePriceViewSet(PCNTBaseReadOnlyViewSet):
     queryset = SubscriptionBasePrice.objects.all()
     serializer_class = SubscriptionBasePriceSerializer
 
+from .models import Order
+from .serializers import OrderSerializer
+class OrderReadOnlyViewSet(PCNTBaseReadOnlyViewSet):
+    queryset = Order.objects.all()
+    serializer_class = OrderSerializer
+
+from .models import CameraCategory
+from .serializers import CameraCategorySerializer
+class CameraCategoryReadOnlyViewSet(PCNTBaseReadOnlyViewSet):
+    queryset = CameraCategory.objects.all()
+    serializer_class = CameraCategorySerializer
+
 class CreateLiqpayOrderView(PCNTBaseAPIView):
     def post(self, request, *args, **kwargs):
         data = request.data

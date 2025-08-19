@@ -3,11 +3,17 @@ from rest_framework.routers import DefaultRouter
 
 from .views import PayView, PayCallbackView, PaymentLiqpayView, PaymentStatusView, PaymentResultView, CreateLiqpayOrderView
 from .views import BalanceViewSet, TestOrderViewSet, SubscriptionBasePriceViewSet
+from .views import OrderReadOnlyViewSet
+from .views import CameraCategoryReadOnlyViewSet
 
 router = DefaultRouter()
 router.register(r'balance', BalanceViewSet)
 router.register(r'test_order', TestOrderViewSet)
 router.register(r'subscription_base_price', SubscriptionBasePriceViewSet, basename='subscriptionbaseprice')
+router.register(r'orders', OrderReadOnlyViewSet, basename='order')
+router.register(r'camera_catg', CameraCategoryReadOnlyViewSet, basename='camera-category')
+
+urlpatterns = router.urls
 
 urlpatterns = [
     path('', include(router.urls)),

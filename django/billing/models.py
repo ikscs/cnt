@@ -37,3 +37,28 @@ class SubscriptionBasePrice(models.Model):
     class Meta:
         db_table = 'subscription_base_price'
         managed = False
+
+class Order(models.Model):
+    amount = models.FloatField()
+    currency = models.CharField(max_length=10)
+    description = models.CharField(max_length=255)
+    data = models.JSONField(null=True, blank=True)
+    param = models.JSONField()
+    customer_id = models.IntegerField()
+    app_id = models.TextField()
+    order_id = models.AutoField(primary_key=True)
+    dt = models.DateTimeField(auto_now_add=True)
+    type = models.CharField(max_length=50)
+
+    class Meta:
+        db_table = 'orders'
+        managed = False
+
+class CameraCategory(models.Model):
+    id = models.AutoField(primary_key=True)
+    type = models.CharField(max_length=255)
+    coeff = models.FloatField()
+
+    class Meta:
+        db_table = 'camera_catg'
+        managed = False
