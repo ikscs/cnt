@@ -199,3 +199,31 @@ from .serializers import SubscriptionBasePriceSerializer
 class SubscriptionBasePriceViewSet(PCNTBaseReadOnlyViewSet):
     queryset = SubscriptionBasePrice.objects.all()
     serializer_class = SubscriptionBasePriceSerializer
+
+class CreateLiqpayOrderView(PCNTBaseAPIView):
+    def post(self, request, *args, **kwargs):
+        amount = request.POST.get('amount')
+        currency = request.POST.get('currency')
+        description = request.POST.get('description')
+        app_id = request.POST.get('app_id')
+        param = request.POST.get('param')
+
+        if not all((amount, currency, description, app_id, (param or param == {}):
+            return Response({'error': 'Data incomplete'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = request.user
+
+        with connections['pcnt'].cursor() as cursor:
+            query = f'SELECT * FROM billing.create_liqpay_order(%s, %s, %s, %s, %s, %s, %s, %s);'
+            try:
+                cursor.execute(query, [amount, currency, description, app_id, user.tenant_id, user.id, user.mode, param])
+                row = cursor.fetchone()
+                if not row or not row[0]:
+                    return Response({'error': f'Order not created'}, status=status.HTTP_400_BAD_REQUEST)
+            except Exception as e:
+                return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+            order_id = row[0]
+
+        data = {'order_id': order_id, 'amount': amount, 'currency': currency, 'description': description, 'app_id': app_id, 'param': param}
+        return Response(data, status=status.HTTP_200_OK)
