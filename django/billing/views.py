@@ -29,7 +29,7 @@ liqpay_params = {
 if settings.LIQPAY.get('RESULT_URL'):
     liqpay_params['result_url'] = settings.LIQPAY['RESULT_URL']
 
-ORDER_TABLE = 'billing.test_order'
+ORDER_TABLE = 'billing.orders'
 
 class PayView(View):
     header = '''<html><body><pre>
@@ -67,7 +67,7 @@ sandbox_token	Успішна оплата по токену
             for k, v in row.items():
                 if k == 'order_id':
                     for e in ['order_id', 'amount', 'currency', 'description']:
-                        params[e] = row[e]
+                        params[e] = str(row[e])
                     signature = liqpay.cnb_signature(params)
                     data = liqpay.cnb_data(params)
 
@@ -124,10 +124,10 @@ class PaymentLiqpayView(APIView):
 
         liqpay = LiqPay(settings.LIQPAY['PUBLIC_KEY'], settings.LIQPAY['PRIVATE_KEY'])
         params = liqpay_params
-        params['amount'] = amount
+        params['amount'] = str(amount)
         params['currency'] = currency
         params['description'] = description
-        params['order_id'] = order_id
+        params['order_id'] = str(order_id)
 
         signature = liqpay.cnb_signature(params)
         data = liqpay.cnb_data(params)
