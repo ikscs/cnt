@@ -2,7 +2,9 @@
 cd /app
 
 ./get_order.py
-#./get_du.py
+
 ./periodic_runner.py
+
+./periodic_report.py
 
 ./sql_call.py "call pcnt.update_demo()"
