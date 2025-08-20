@@ -274,8 +274,11 @@ class CallReportView(PCNTBaseAPIView):
     def post(self, request):
 
         with connections['pcnt'].cursor() as cursor:
-            query = "SELECT query, report_config FROM perm_report WHERE app_id=%s AND report_id=%s;"
-            cursor.execute(query, [request.data.get('app_id'), request.data.get('report_id')])
+#            query = "SELECT query, report_config FROM perm_report WHERE app_id=%s AND report_id=%s;"
+#            cursor.execute(query, [request.data.get('app_id'), request.data.get('report_id')])
+            lang = request.data.get('lang', 'ua')
+            query = "SELECT query, report_config FROM v_perm_report WHERE app_id=%s AND report_id=%s AND lang=%s;"
+            cursor.execute(query, [request.data.get('app_id'), request.data.get('report_id'), lang])
             row = cursor.fetchone()
             if not row:
                 return Response({'ok': False, 'data': ['Wrong report']}, content_type='application/json')
@@ -305,6 +308,48 @@ class CallReportView(PCNTBaseAPIView):
                 data.append(r)
 
         return Response({'ok': True, 'data': data}, content_type='application/json')
+
+
+
+class VReportView(PCNTBaseAPIView):
+    def get(self, request):
+        data = request.query_params
+
+        par = dict()
+        for k in ['app_id', 'report_id', 'lang']:
+            v = data.get(k)
+            if v:
+                par[k] = v
+        if par:
+            query_par = '=%s AND '.join(par.keys())
+            query_par = f' WHERE {query_par}=%s'
+        else:
+            query_par = ''
+
+        with connections['pcnt'].cursor() as cursor:
+#            query = "SELECT report_name, query, report_config FROM v_perm_report WHERE app_id=%s AND report_id=%s;"
+#            query = "SELECT * FROM v_perm_report WHERE app_id=%s AND report_id=%s;"
+            query = f"SELECT * FROM v_perm_report{query_par};"
+#            cursor.execute(query, [data.get('app_id'), data.get('report_id')])
+            cursor.execute(query, list(par.values()))
+            field_names = [e[0] for e in cursor.description]
+            rows = cursor.fetchall()
+            if not rows:
+                return Response({'error':'Wrong report'}, content_type='application/json')
+
+            data = []
+            for row in rows:
+                r = {name: value for name, value in zip(field_names, row)}
+                for k in field_names:
+                    if k.endswith('_lang'):
+                        if r[k]:
+                            r[k.split('_lang')[0]] = r[k]
+                        del r[k]
+                data.append(r)
+
+        return Response(data, content_type='application/json')
+
+
 
 from .external_api import Userfront
 class RegisterCustomerView(PCNTBaseAPIView):

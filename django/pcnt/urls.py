@@ -19,6 +19,8 @@ from .views import OriginByPointId
 
 from .views import ExportVCAViewSetByPoint
 
+from .views import VReportView
+
 router = DefaultRouter()
 router.register(r'age', AgeViewSet)
 router.register(r'app', AppViewSet)
@@ -72,4 +74,6 @@ urlpatterns = [
     path('origin/point/<int:point_id>/', OriginByPointId.as_view(), name='origin-by-point'),
     path('perm_report/', perm_report_list, name='perm_report-list'),
     path('perm_report/<str:app_id>/<int:report_id>/', perm_report_detail, name='perm_report-detail'),
+
+    path("v_perm_report/", VReportView.as_view(), name='v_report_view'),
 ]
