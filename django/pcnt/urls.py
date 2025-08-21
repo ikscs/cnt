@@ -16,6 +16,7 @@ from .views import VCustomerPersonViewSet
 from .views import VCustomerExportViewSet
 from .views import UserCacheViewSet
 from .views import OriginByPointId
+from .views import ReportScheduleViewSet
 
 from .views import ExportVCAViewSetByPoint
 
@@ -62,6 +63,7 @@ router.register(r'v_customer_origin', VCustomerOriginViewSet, basename='v-custom
 router.register(r'v_customer_person', VCustomerPersonViewSet, basename='v-customer-person')
 router.register(r'v_customer_export', VCustomerExportViewSet, basename='v-customer-export')
 router.register(r'user_cache', UserCacheViewSet)
+router.register(r'report_schedule', ReportScheduleViewSet)
 
 perm_report_list = PermReportViewSet.as_view({'get': 'list', 'post': 'create',})
 perm_report_detail = PermReportViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy',})

@@ -246,6 +246,11 @@ class ThemeViewSet(PCNTBaseViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['app_id']
 
+from .models import ReportSchedule
+from .serializers import ReportScheduleSerializer
+class ReportScheduleViewSet(PCNTBaseViewSet):
+    queryset = ReportSchedule.objects.all()
+    serializer_class = ReportScheduleSerializer
 
 class CallDbFunctionView(PCNTBaseAPIView):
     def post(self, request):

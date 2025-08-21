@@ -226,3 +226,9 @@ class ThemeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Theme
         fields = '__all__'
+
+from .models import ReportSchedule
+class ReportScheduleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ReportSchedule
+        fields = '__all__'
