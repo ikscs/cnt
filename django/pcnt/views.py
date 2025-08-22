@@ -314,8 +314,41 @@ class CallReportView(PCNTBaseAPIView):
 
         return Response({'ok': True, 'data': data}, content_type='application/json')
 
-
 class VReportView(PCNTBaseAPIView):
+    def load_vocabl(self, row, col):
+        #Load dictionary from col
+        try:
+            var_list = row[col]
+        except Exception as err:
+            return dict()
+
+        if not var_list:
+            return dict()
+
+        vocabl = dict()
+        for var in var_list:
+            name = var.get('name')
+            if not name:
+                continue
+            vocabl[name] = dict()
+            for k, v in var.items():
+                if k == 'name':
+                    continue
+                vocabl[name][k] = v
+        return vocabl
+
+    def translate_data(self, report_config, params, vocabl):
+        data = report_config.get(params, [])
+        data_new = []
+        for var in data:
+            name = var.get('name')
+            if name and (name in vocabl):
+                for k, v in vocabl[name].items():
+                    if k in var:
+                        var[k] = v
+            data_new.append(var)
+        return data_new
+
     def get(self, request):
         data = request.query_params
 
@@ -343,43 +376,23 @@ class VReportView(PCNTBaseAPIView):
                 #Load row into dict
                 r = {name: value for name, value in zip(field_names, row)}
 
-                #Load dictionary from report_param
-                vocabl = dict()
-                try:
-                    var_list = json.loads(r['report_param'])
-                except Exception as err:
-                    var_list = []
-
-                for var in var_list:
-                    name = var.get('name')
-                    if not name:
-                        continue
-                    vocabl[name] = dict()
-                    for k, v in var.items():
-                        if k == 'name':
-                            continue
-                        vocabl[name][k] = v
-
-                #Translate report_config with vocabl
+                #Get report_config
                 try:
                     report_config = json.loads(r['report_config'])
                 except Exception as err:
                     report_config = dict()
 
-                report_config_params = report_config.get('params', [])
-                report_config_params_new = []
-                for var in report_config_params:
-                    name = var.get('name')
-                    if name and (name in vocabl):
-                        for k, v in vocabl[name].items():
-                            if k in var:
-                                var[k] = v
-                    report_config_params_new.append(var)
-
-                #Replace report config
-                report_config['params'] = report_config_params_new
-                r['report_config'] = json.dumps(report_config, ensure_ascii=False)
+                #Replace report config with translated data params
+                vocabl = self.load_vocabl(r, 'report_param')
+                report_config['params'] = self.translate_data(report_config, 'params', vocabl)
                 r.pop('report_param', None)
+
+                #Replace report config with translated data columns
+                vocabl = self.load_vocabl(r, 'report_column')
+                report_config['columns'] = self.translate_data(report_config, 'columns', vocabl)
+                r.pop('report_column', None)
+
+                r['report_config'] = json.dumps(report_config, ensure_ascii=False)
 
                 #Translate name and description
                 for k in field_names:
@@ -390,7 +403,6 @@ class VReportView(PCNTBaseAPIView):
                 data.append(r)
 
         return Response(data, content_type='application/json')
-
 
 from .external_api import Userfront
 class RegisterCustomerView(PCNTBaseAPIView):
