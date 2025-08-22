@@ -26,10 +26,12 @@ FROM origin o
 LEFT JOIN origin_next_pooling n ON o.id=n.origin_id
 LEFT JOIN origin_type t using(origin_type_id)
 LEFT JOIN point p using(point_id)
+LEFT JOIN billing.balance b using(customer_id)
 WHERE
 t.protocol = '{ORIGIN_PROTOCOL}'
 AND o.is_enabled
 AND CURRENT_TIME between p.start_time AND p.end_time
+AND NOW() <= b.end_date
 AND NOW() >= COALESCE(n.next_dt, '{ZERO_DAY}')
 ORDER BY n.next_dt ASC
 LIMIT 1
