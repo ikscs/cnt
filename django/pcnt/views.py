@@ -281,7 +281,7 @@ class CallReportView(PCNTBaseAPIView):
         with connections['pcnt'].cursor() as cursor:
 #            query = "SELECT query, report_config FROM perm_report WHERE app_id=%s AND report_id=%s;"
 #            cursor.execute(query, [request.data.get('app_id'), request.data.get('report_id')])
-            lang = request.data.get('lang', 'ua')
+            lang = request.data.get('lang', 'uk')
             query = "SELECT query, report_config FROM v_perm_report WHERE app_id=%s AND report_id=%s AND lang=%s;"
             cursor.execute(query, [request.data.get('app_id'), request.data.get('report_id'), lang])
             row = cursor.fetchone()
