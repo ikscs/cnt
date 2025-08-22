@@ -325,6 +325,15 @@ class VReportView(PCNTBaseAPIView):
         if not var_list:
             return dict()
 
+        if isinstance(var_list, str):
+            try:
+                var_list = json.loads(var_list)
+            except Exception as err:
+                return dict()
+
+        if not isinstance(var_list, list):
+            return dict()
+
         vocabl = dict()
         for var in var_list:
             name = var.get('name')
