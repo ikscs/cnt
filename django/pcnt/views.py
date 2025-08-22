@@ -315,7 +315,6 @@ class CallReportView(PCNTBaseAPIView):
         return Response({'ok': True, 'data': data}, content_type='application/json')
 
 
-
 class VReportView(PCNTBaseAPIView):
     def get(self, request):
         data = request.query_params
@@ -332,10 +331,7 @@ class VReportView(PCNTBaseAPIView):
             query_par = ''
 
         with connections['pcnt'].cursor() as cursor:
-#            query = "SELECT report_name, query, report_config FROM v_perm_report WHERE app_id=%s AND report_id=%s;"
-#            query = "SELECT * FROM v_perm_report WHERE app_id=%s AND report_id=%s;"
             query = f"SELECT * FROM v_perm_report{query_par};"
-#            cursor.execute(query, [data.get('app_id'), data.get('report_id')])
             cursor.execute(query, list(par.values()))
             field_names = [e[0] for e in cursor.description]
             rows = cursor.fetchall()
@@ -344,7 +340,48 @@ class VReportView(PCNTBaseAPIView):
 
             data = []
             for row in rows:
+                #Load row into dict
                 r = {name: value for name, value in zip(field_names, row)}
+
+                #Load dictionary from report_param
+                vocabl = dict()
+                try:
+                    var_list = json.loads(r['report_param'])
+                except Exception as err:
+                    var_list = []
+
+                for var in var_list:
+                    name = var.get('name')
+                    if not name:
+                        continue
+                    vocabl[name] = dict()
+                    for k, v in var.items():
+                        if k == 'name':
+                            continue
+                        vocabl[name][k] = v
+
+                #Translate report_config with vocabl
+                try:
+                    report_config = json.loads(r['report_config'])
+                except Exception as err:
+                    report_config = dict()
+
+                report_config_params = report_config.get('params', [])
+                report_config_params_new = []
+                for var in report_config_params:
+                    name = var.get('name')
+                    if name and (name in vocabl):
+                        for k, v in vocabl[name].items():
+                            if k in var:
+                                var[k] = v
+                    report_config_params_new.append(var)
+
+                #Replace report config
+                report_config['params'] = report_config_params_new
+                r['report_config'] = json.dumps(report_config, ensure_ascii=False)
+                r.pop('report_param', None)
+
+                #Translate name and description
                 for k in field_names:
                     if k.endswith('_lang'):
                         if r[k]:
@@ -353,7 +390,6 @@ class VReportView(PCNTBaseAPIView):
                 data.append(r)
 
         return Response(data, content_type='application/json')
-
 
 
 from .external_api import Userfront
