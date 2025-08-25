@@ -282,7 +282,7 @@ class CallReportView(PCNTBaseAPIView):
 #            query = "SELECT query, report_config FROM perm_report WHERE app_id=%s AND report_id=%s;"
 #            cursor.execute(query, [request.data.get('app_id'), request.data.get('report_id')])
             lang = request.data.get('lang', 'uk')
-            query = "SET app.lang = %S"
+            query = "SET app.lang = %s"
             cursor.execute(query, [lang])
 
             query = "SELECT query, report_config FROM v_perm_report WHERE app_id=%s AND report_id=%s AND lang=%s;"
