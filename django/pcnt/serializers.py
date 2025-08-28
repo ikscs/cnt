@@ -232,3 +232,9 @@ class ReportScheduleSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReportSchedule
         fields = '__all__'
+
+from .models import VReportSchedule
+class VReportScheduleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VReportSchedule
+        fields = '__all__'

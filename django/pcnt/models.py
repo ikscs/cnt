@@ -564,6 +564,7 @@ class ReportSchedule(models.Model):
     enable = models.BooleanField(default=False)
     last_dt = models.DateTimeField(auto_now=True)
     params = models.JSONField(null=True, blank=True, default=None)
+    maillist = models.TextField()
 
     class Meta:
         managed = False
@@ -572,3 +573,21 @@ class ReportSchedule(models.Model):
 
     def __str__(self):
         return f"Schedule: {self.customer_id} - {self.app_id} - {self.report_id} - {self.lang}"
+
+class VReportSchedule(models.Model):
+    id = models.AutoField(primary_key=True)
+    customer_id = models.ForeignKey(Customer, models.DO_NOTHING, db_column='customer_id', to_field='customer_id')
+    app_id = models.TextField()
+    report_id = models.IntegerField()
+    lang = models.TextField()
+    cron = models.TextField(default='0 6 * * *')
+    enable = models.BooleanField(default=False)
+    last_dt = models.DateTimeField(auto_now=True)
+    params = models.JSONField(null=True, blank=True, default=None)
+    maillist = models.TextField()
+    report_name = models.TextField()
+
+    class Meta:
+        managed = False
+        db_table = 'v_report_schedule'
+        unique_together = ('customer', 'app_id', 'report_id', 'lang', 'params')

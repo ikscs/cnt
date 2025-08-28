@@ -252,6 +252,12 @@ class ReportScheduleViewSet(PCNTBaseViewSet):
     queryset = ReportSchedule.objects.all()
     serializer_class = ReportScheduleSerializer
 
+from .models import VReportSchedule
+from .serializers import VReportScheduleSerializer
+class VReportScheduleViewSet(PCNTBaseReadOnlyViewSet):
+    queryset = VReportSchedule.objects.all()
+    serializer_class = VReportScheduleSerializer
+
 class CallDbFunctionView(PCNTBaseAPIView):
     def post(self, request):
         func = request.query_params.get("func")
