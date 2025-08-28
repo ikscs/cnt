@@ -39,9 +39,8 @@ def main():
     sender = Sender(email_cfg)
 
     sql_select = '''
-SELECT s.id, s.cron, s.last_dt, c.email, v.query, v.report_config::jsonb->>'params', v.report_name, v.report_name_lang, s.params
+SELECT s.id, s.cron, s.last_dt, maillist, v.query, v.report_config::jsonb->>'params', v.report_name, v.report_name_lang, s.params
 FROM report_schedule s
-LEFT JOIN public.customer c USING(customer_id)
 LEFT JOIN v_perm_report v USING(app_id, report_id, lang)
 WHERE s.enable
 '''
@@ -51,12 +50,12 @@ WHERE s.enable
     db.cursor.execute(sql_select)
     result = db.cursor.fetchall()
 
-    for id, cron, last_dt, email, query, report_config_params, report_name, report_name_lang, params in result:
+    for id, cron, last_dt, maillist, query, report_config_params, report_name, report_name_lang, params in result:
         itr = croniter(cron, dt)
         last_run = itr.get_prev(datetime)
         last_run = last_run.astimezone(to_zone)
 
-        if not email:
+        if not maillist or '@' not in maillist:
             continue
 
         if (last_dt != None) and last_dt >= last_run:
@@ -75,7 +74,7 @@ WHERE s.enable
         if data:
             body = list_to_html(data)
 
-            sender.recipient = email
+            sender.recipient = maillist
             sender.send_email(report_name, '', html=body)
 
         db.cursor.execute(sql_update, [id,])
