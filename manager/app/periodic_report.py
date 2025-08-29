@@ -104,7 +104,7 @@ def list_to_html(data_list):
 
     headers = data_list[0].keys()
 
-    html_table = "<table>\n"
+    html_table = "<table cellpadding=\"5\" border='1' style='border-collapse: collapse;'>\n"
     html_table += "  <thead>\n    <tr>\n"
     for header in headers:
         html_table += f"      <th>{header}</th>\n"
