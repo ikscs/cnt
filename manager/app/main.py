@@ -1,3 +1,4 @@
+import json
 from fastapi import FastAPI, Form
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from db_wrapper import DB
@@ -32,6 +33,8 @@ async def send_mail(
 
     if not recipient or '@' not in recipient:
         return JSONResponse(content={"status": 'Error', "result": "Wrong recipient"})
+
+    sender = Sender(email_cfg)
 
     body = list_to_html(json.loads(data))
     sender.recipient = recipient
