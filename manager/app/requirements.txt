@@ -2,3 +2,6 @@ psycopg2-binary
 requests
 croniter
 docker
+uvicorn[standard]
+python-multipart
+fastapi==0.98.0

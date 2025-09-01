@@ -114,7 +114,7 @@ def list_to_html(data_list):
     for row_dict in data_list:
         html_table += "    <tr>\n"
         for header in headers:
-            value = row_dict.get(header, "") 
+            value = row_dict.get(header, "")
             html_table += f"      <td>{value}</td>\n"
         html_table += "    </tr>\n"
     html_table += "  </tbody>\n"

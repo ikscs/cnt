@@ -22,4 +22,6 @@ RUN cat 1.tmp 2.tmp > /etc/cron.d/my_cron && \
 
 RUN rm -rf *.tmp
 
-CMD ["cron", "-f"]
+EXPOSE 8000
+
+CMD ["./entrypoint.sh"]
