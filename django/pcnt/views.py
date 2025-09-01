@@ -9,6 +9,8 @@ from rest_framework import status
 from django.db import connections
 from django.utils.html import escape  # for sanitizing 'func' input
 import json
+import requests
+from decimal import Decimal
 
 from django_filters.rest_framework import DjangoFilterBackend
 
@@ -281,21 +283,25 @@ class CallDbFunctionView(PCNTBaseAPIView):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+def custom_encoder(obj):
+    if isinstance(obj, Decimal):
+        return float(obj)
+    raise TypeError(f"Type {type(obj)} not serializable")
+
 class CallReportView(PCNTBaseAPIView):
     def post(self, request):
-
         with connections['pcnt'].cursor() as cursor:
-#            query = "SELECT query, report_config FROM perm_report WHERE app_id=%s AND report_id=%s;"
-#            cursor.execute(query, [request.data.get('app_id'), request.data.get('report_id')])
             lang = request.data.get('lang', 'uk')
             query = "SET app.lang = %s"
             cursor.execute(query, [lang])
 
-            query = "SELECT query, report_config FROM v_perm_report WHERE app_id=%s AND report_id=%s AND lang=%s;"
+            query = "SELECT query, report_config, report_name, report_name_lang  FROM v_perm_report WHERE app_id=%s AND report_id=%s AND lang=%s;"
             cursor.execute(query, [request.data.get('app_id'), request.data.get('report_id'), lang])
             row = cursor.fetchone()
             if not row:
                 return Response({'ok': False, 'data': ['Wrong report']}, content_type='application/json')
+
+            report_name = row[3] if row[3] else row[2]
 
             try:
                 query = row[0]
@@ -320,6 +326,11 @@ class CallReportView(PCNTBaseAPIView):
             for row in cursor.fetchall():
                 r = {name: value for name, value in zip(field_names, row)}
                 data.append(r)
+
+        recipient = request.data.get('recipient', None)
+        if recipient:
+            payload = {'recipient': recipient, 'subject': report_name, 'data': json.dumps(data, default=custom_encoder)}
+            requests.post('http://manager:8000/send_mail.json', data=payload)
 
         return Response({'ok': True, 'data': data}, content_type='application/json')
 
