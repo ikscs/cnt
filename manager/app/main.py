@@ -3,6 +3,7 @@ from fastapi import FastAPI, Form
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from db_wrapper import DB
 from sender import Sender, get_email_cfg
+from datetime import date
 
 app = FastAPI()
 
@@ -36,19 +37,24 @@ async def send_mail(
 
     sender = Sender(email_cfg)
 
-    body = list_to_html(json.loads(data))
+    today = date.today()
+    subject = f'{subject} {today}'
+
+    body = list_to_html(json.loads(data), subject)
     sender.recipient = recipient
     sender.send_email(subject, '', html=body)
 
     return JSONResponse(content={"status": 'Ok'})
 
-def list_to_html(data_list):
+def list_to_html(data_list, subject):
     if not data_list:
         return "<table></table>"
 
     headers = data_list[0].keys()
 
-    html_table = "<table cellpadding=\"5\" border='1' style='border-collapse: collapse;'>\n"
+    html_table = f"<h1>{subject}</h1>\n"
+
+    html_table += "<table cellpadding=\"5\" border='1' style='border-collapse: collapse;'>\n"
     html_table += "  <thead>\n    <tr>\n"
     for header in headers:
         html_table += f"      <th>{header}</th>\n"

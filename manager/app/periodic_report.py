@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from dateutil import tz
 import json
 from sender import Sender, get_email_cfg
+from datetime import date
 
 class DB:
     def open(self):
@@ -72,10 +73,12 @@ WHERE s.enable
 
         data = exec_report(db.cursor, query, parameters)
         if data:
-            body = list_to_html(data)
+            today = date.today()
+            subject = f'{report_name} {today}'
+            body = list_to_html(data, subject)
 
             sender.recipient = maillist
-            sender.send_email(report_name, '', html=body)
+            sender.send_email(subject, '', html=body)
 
         db.cursor.execute(sql_update, [id,])
         db.conn.commit()
@@ -98,13 +101,15 @@ def exec_report(cursor, query, parameters):
 
     return data
 
-def list_to_html(data_list):
+def list_to_html(data_list, subject):
     if not data_list:
         return "<table></table>"
 
     headers = data_list[0].keys()
 
-    html_table = "<table cellpadding=\"5\" border='1' style='border-collapse: collapse;'>\n"
+    html_table = f"<h1>{subject}</h1>\n"
+
+    html_table += "<table cellpadding=\"5\" border='1' style='border-collapse: collapse;'>\n"
     html_table += "  <thead>\n    <tr>\n"
     for header in headers:
         html_table += f"      <th>{header}</th>\n"

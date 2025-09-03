@@ -23,15 +23,15 @@ class Sender:
         if not bytes:
             return
 
-        msg = MIMEMultipart()
+        #msg = MIMEMultipart()
+        msg = MIMEText(html if html else body, _subtype='html' if html else 'text', _charset='utf-8')
+
         msg['From'] = self.sender_email
         msg['To'] = self.recipient
         msg['Subject'] = subject
 
         # Attach email body
-        msg.attach(MIMEText(body, 'plain'))
-        if html:
-            msg.attach(MIMEText(html, 'html'))
+        #msg.attach(MIMEText(body, 'plain', 'utf-8'))
 
         # Attach in-memory file data if provided
         if attachment_data and attachment_name:
