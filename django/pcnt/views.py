@@ -11,6 +11,7 @@ from django.utils.html import escape  # for sanitizing 'func' input
 import json
 import requests
 from decimal import Decimal
+from datetime import date, datetime
 
 from django_filters.rest_framework import DjangoFilterBackend
 
@@ -286,6 +287,10 @@ class CallDbFunctionView(PCNTBaseAPIView):
 def custom_encoder(obj):
     if isinstance(obj, Decimal):
         return float(obj)
+    elif isinstance(obj, date):
+        return obj.isoformat()
+    elif isinstance(obj, datetime):
+        return json.dumps(obj)
     raise TypeError(f"Type {type(obj)} not serializable")
 
 class CallReportView(PCNTBaseAPIView):
