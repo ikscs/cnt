@@ -300,7 +300,7 @@ class CallReportView(PCNTBaseAPIView):
             query = "SET app.lang = %s"
             cursor.execute(query, [lang])
 
-            query = "SELECT query, report_config, report_name, report_name_lang  FROM v_perm_report WHERE app_id=%s AND report_id=%s AND lang=%s;"
+            query = "SELECT query, report_config, report_name, report_name_lang, report_column  FROM v_perm_report WHERE app_id=%s AND report_id=%s AND lang=%s;"
             cursor.execute(query, [request.data.get('app_id'), request.data.get('report_id'), lang])
             row = cursor.fetchone()
             if not row:
@@ -311,6 +311,7 @@ class CallReportView(PCNTBaseAPIView):
             try:
                 query = row[0]
                 data = json.loads(row[1])
+                report_column = json.loads(row[4]) if row[4] else None
             except Exception as err:
                 return Response({'ok': False, 'data': [str(err)]}, content_type='application/json', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -328,6 +329,12 @@ class CallReportView(PCNTBaseAPIView):
             cursor.execute(query, val)
             field_names = [e[0] for e in cursor.description]
 
+            if report_column:
+                print(report_column, type(report_column))
+                column_dict = {r['field']: r['display'] for r in report_column}
+                field_names_new = [column_dict.get(e, e) for e in field_names]
+                field_names = field_names_new
+
             for row in cursor.fetchall():
                 r = {name: value for name, value in zip(field_names, row)}
                 data.append(r)
@@ -340,7 +347,7 @@ class CallReportView(PCNTBaseAPIView):
         return Response({'ok': True, 'data': data}, content_type='application/json')
 
 class VReportView(PCNTBaseAPIView):
-    def load_vocabl(self, row, col):
+    def load_vocabl(self, row, col, key='name'):
         #Load dictionary from col
         try:
             var_list = row[col]
@@ -361,21 +368,21 @@ class VReportView(PCNTBaseAPIView):
 
         vocabl = dict()
         for var in var_list:
-            name = var.get('name')
+            name = var.get(key)
             if not name:
                 continue
             vocabl[name] = dict()
             for k, v in var.items():
-                if k == 'name':
+                if k == key:
                     continue
                 vocabl[name][k] = v
         return vocabl
 
-    def translate_data(self, report_config, params, vocabl):
+    def translate_data(self, report_config, params, vocabl, key='name'):
         data = report_config.get(params, [])
         data_new = []
         for var in data:
-            name = var.get('name')
+            name = var.get(key)
             if name and (name in vocabl):
                 for k, v in vocabl[name].items():
                     if k in var:
@@ -433,8 +440,8 @@ class VReportView(PCNTBaseAPIView):
                 r.pop('report_param', None)
 
                 #Replace report config with translated data columns
-                vocabl = self.load_vocabl(r, 'report_column')
-                report_config['columns'] = self.translate_data(report_config, 'columns', vocabl)
+                vocabl = self.load_vocabl(r, 'report_column', key='field')
+                report_config['columns'] = self.translate_data(report_config, 'columns', vocabl, key='field')
                 r.pop('report_column', None)
 
                 #Translate labels
