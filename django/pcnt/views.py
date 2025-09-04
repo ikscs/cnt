@@ -383,6 +383,14 @@ class VReportView(PCNTBaseAPIView):
             data_new.append(var)
         return data_new
 
+    def commot_t(self, cursor, key):
+        query = f"SELECT common_t(%s);"
+        cursor.execute(query, [key])
+        rows = cursor.fetchall()
+        if not rows:
+            return key
+        return rows[0][0]
+
     def get(self, request):
         data = request.query_params
 
@@ -398,6 +406,9 @@ class VReportView(PCNTBaseAPIView):
             query_par = ''
 
         with connections['pcnt'].cursor() as cursor:
+            query = "SET app.lang = %s"
+            cursor.execute(query, [par.get('lang', 'uk')])
+
             query = f"SELECT * FROM v_perm_report{query_par};"
             cursor.execute(query, list(par.values()))
             field_names = [e[0] for e in cursor.description]
@@ -425,6 +436,14 @@ class VReportView(PCNTBaseAPIView):
                 vocabl = self.load_vocabl(r, 'report_column')
                 report_config['columns'] = self.translate_data(report_config, 'columns', vocabl)
                 r.pop('report_column', None)
+
+                #Translate labels
+                for data_list in (report_config['columns'], [report_config['chart']]):
+                    for row in data_list:
+                        for k, v in row.items():
+                            if 'label' in k:
+                                print(k, v)
+                                row[k] = self.commot_t(cursor, v)
 
                 r['report_config'] = json.dumps(report_config, ensure_ascii=False)
 
