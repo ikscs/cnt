@@ -438,7 +438,9 @@ class VReportView(PCNTBaseAPIView):
                 r.pop('report_column', None)
 
                 #Translate labels
-                for data_list in (report_config['columns'], [report_config['chart']]):
+                chart = report_config.get('chart')
+                data_lists = (report_config['columns'], [chart]) if chart else (report_config['columns'],)
+                for data_list in data_lists:
                     for row in data_list:
                         for k, v in row.items():
                             if 'label' in k:
