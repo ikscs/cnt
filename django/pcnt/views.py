@@ -442,7 +442,6 @@ class VReportView(PCNTBaseAPIView):
                     for row in data_list:
                         for k, v in row.items():
                             if 'label' in k:
-                                print(k, v)
                                 row[k] = self.commot_t(cursor, v)
 
                 r['report_config'] = json.dumps(report_config, ensure_ascii=False)
