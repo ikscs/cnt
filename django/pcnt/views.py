@@ -304,7 +304,7 @@ class CallReportView(PCNTBaseAPIView):
             cursor.execute(query, [request.data.get('app_id'), request.data.get('report_id'), lang])
             row = cursor.fetchone()
             if not row:
-                return Response({'ok': False, 'data': ['Wrong report']}, content_type='application/json')
+                return Response('Wrong report', status=status.HTTP_400_BAD_REQUEST)
 
             report_name = row[3] if row[3] else row[2]
 
@@ -421,7 +421,7 @@ class VReportView(PCNTBaseAPIView):
             field_names = [e[0] for e in cursor.description]
             rows = cursor.fetchall()
             if not rows:
-                return Response({'error':'Wrong report'}, content_type='application/json')
+                return Response('Wrong report', status=status.HTTP_400_BAD_REQUEST)
 
             data = []
             for row in rows:
