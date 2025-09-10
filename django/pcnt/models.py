@@ -342,6 +342,7 @@ class PermReport(models.Model):
     report_config = models.TextField(blank=True, null=True)
     report_description = models.TextField(blank=True, null=True)
     report_id = models.DecimalField(max_digits=20, decimal_places=0)
+    tag = models.TextField(blank=True, null=True)
     class Meta:
         managed = False
         db_table = 'perm_report'
@@ -494,6 +495,9 @@ class VCustomerOrigin(models.Model):
     credentials = models.JSONField(null=True, blank=True)
     is_enabled = models.BooleanField(default=True)
     name = models.TextField(null=True, blank=True)
+    success = models.BooleanField(blank=True, null=True)
+    dt = models.DateTimeField(blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
 
     class Meta:
         managed = False
@@ -565,6 +569,7 @@ class ReportSchedule(models.Model):
     last_dt = models.DateTimeField(auto_now=True)
     params = models.JSONField(null=True, blank=True, default=None)
     maillist = models.TextField()
+    comment = models.TextField(blank=True, null=True)
 
     class Meta:
         managed = False
@@ -586,6 +591,7 @@ class VReportSchedule(models.Model):
     params = models.JSONField(null=True, blank=True, default=None)
     maillist = models.TextField()
     report_name = models.TextField()
+    comment = models.TextField(blank=True, null=True)
 
     class Meta:
         managed = False

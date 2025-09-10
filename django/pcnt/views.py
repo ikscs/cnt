@@ -135,6 +135,8 @@ class OriginByPointId(PCNTBaseAPIView):
 class OriginTypeViewSet(PCNTBaseViewSet):
     queryset = OriginType.objects.all()
     serializer_class = OriginTypeSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['enabled',]
 
 class OsdViewSet(PCNTBaseViewSet):
     queryset = Osd.objects.all()
@@ -402,13 +404,14 @@ class VReportView(PCNTBaseAPIView):
         data = request.query_params
 
         par = dict()
-        for k in ['app_id', 'report_id', 'lang']:
+        for k in ['app_id', 'report_id', 'lang', 'tag']:
             v = data.get(k)
             if v:
                 par[k] = v
         if par:
             query_par = '=%s AND '.join(par.keys())
             query_par = f' WHERE {query_par}=%s'
+            query_par = query_par.replace('tag=%s', 'check_report_tag(%s, tag)')
         else:
             query_par = ''
 
