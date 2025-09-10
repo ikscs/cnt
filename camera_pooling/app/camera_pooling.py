@@ -56,6 +56,8 @@ ORDER BY n.next_dt ASC
 LIMIT 1
 '''
 
+    sql_status = 'INSERT INTO origin_status (id, success, dt, description) VALUES (%s, %s, %s, %s) ON CONFLICT (id) DO UPDATE SET success=%s, dt=%s, description=%s'
+
     while True:
         if sl.have_time():
             db.open()
@@ -76,8 +78,14 @@ LIMIT 1
 
             try:
                 count, end_time = runners[vendor](credentials, origin, id, last_dt, params)
-            except Exception as e:
+                err = None
+            except Exception as err:
+                count, end_time, err = 0, None, str(err)
                 logging.exception("Error while running job")
+            success = bool(end_time != None)
+            end_time = end_time if success else 'CURRENT_TIMESTAMP'
+
+            db.cursor.execute(sql_status, [id, success, end_time, err, success, end_time, err])
 
             db.cursor.execute(sql_next, [id, poling_period_s, poling_period_s])
             db.conn.commit()
