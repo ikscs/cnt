@@ -107,7 +107,7 @@ class CustomerToApp(models.Model):
 
 class Division(models.Model):
     pk = models.CompositePrimaryKey('customer_id', 'division_id')
-    customer_id = models.DecimalField(max_digits=20, decimal_places=0)
+    customer_id = models.IntegerField()
     legal_name = models.TextField()
     address = models.TextField()
     division_id = models.TextField()

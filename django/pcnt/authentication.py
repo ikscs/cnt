@@ -16,28 +16,44 @@ for tenant_id in settings.TENANTIDS:
         url = USERFRONT_PUBLIC_KEYS_URL.format(tenant_id=tenant_id, param=param)
         public_key[tenant_id][mode] = requests.get(url).json()['results'][0]['publicKey']
 
+import socket
+import ipaddress
+
+#Load local network
+ip_address = socket.gethostbyname(socket.gethostname())
+MY_NETWORK = ipaddress.ip_network(f'{ip_address}/16', strict=False)
+
+def is_trusted_network(ip):
+    return ipaddress.ip_address(ip) in MY_NETWORK
+
+def get_client_ip(request):
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0].strip()
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
 
 class UserfrontAuthentication(BaseAuthentication):
     def authenticate(self, request):
 
-        '''
-        match = request.resolver_match
-        if match:
-            view_func = match.func  # DRF view class instance
-            view_class = view_func.cls if hasattr(view_func, 'cls') else None
-            action = match.url_name  # or match.view_name
-            print(f"Func: {view_func}, view: {view_class}, action: {action}")
-        '''
-
         if settings.BYPASS_AUTH:
-            user = FakeUser(None, None, 'Authentification disabled!!!')
+            user = AuthUser(None, None, 'Authentification disabled!!!')
             return (user, None)
 
         auth_header = request.headers.get('Authorization')
         if settings.DEBUG and auth_header and 'SuperMario' in auth_header:
             try:
                 payload = json.loads(auth_header)
-                user = FakeUser(payload['tenantId'], payload['userId'], payload.get('userUuid'), payload['mode'])
+                user = AuthUser(payload['tenantId'], payload['userId'], payload.get('userUuid'), payload['mode'])
+                return (user, None)
+            except Exception as err:
+                pass
+
+        if auth_header and is_trusted_network(get_client_ip(request)):
+            try:
+                payload = json.loads(auth_header)
+                user = AuthUser(payload.get('tenantId'), payload.get('userId'), payload.get('userUuid'), payload.get('mode'), payload.get('customer_id'))
                 return (user, None)
             except Exception as err:
                 pass
@@ -72,22 +88,27 @@ class UserfrontAuthentication(BaseAuthentication):
         if payload['tenantId'] not in settings.TENANTIDS:
             raise AuthenticationFailed(f'Wrong tenantId')
 
-        user = FakeUser(payload['tenantId'], payload['userId'], payload.get('userUuid'), payload['mode'])
+        user = AuthUser(payload['tenantId'], payload['userId'], payload.get('userUuid'), payload['mode'])
         return (user, None)
 
-class FakeUser:
-    def __init__(self, tenant_id=None, user_id=None, username=None, mode=None):
+class AuthUser:
+    def __init__(self, tenant_id=None, user_id=None, username=None, mode=None, customer_id=None):
         self.id = user_id
         self.username = username or f"user_{user_id}"
         self.tenant_id = tenant_id
         self.mode = mode
+        self.customer_id = customer_id
 
         with connections['pcnt'].cursor() as cursor:
-            cursor.execute("CALL public.set_rls(%s, %s, %s);", [self.tenant_id, self.id, self.mode])
+            if self.customer_id == None:
+                cursor.execute("CALL public.set_rls(%s, %s, %s);", [self.tenant_id, self.id, self.mode])
+            else:
+                cursor.execute("SET ROLE app_user; SET app.customer_id = %s;", [self.customer_id,])
 
     @property
     def is_authenticated(self):
         return True
+
     @property
     def is_anonymous(self):
         return False
