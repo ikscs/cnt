@@ -56,7 +56,7 @@ ORDER BY n.next_dt ASC
 LIMIT 1
 '''
 
-    sql_status = 'INSERT INTO origin_status (id, success, dt, description) VALUES (%s, %s, %s, %s) ON CONFLICT (id) DO UPDATE SET success=%s, dt=%s, description=%s'
+    sql_status = 'INSERT INTO origin_status (id, success, dt, description) VALUES (%s, %s, COALESCE(%s, CURRENT_TIMESTAMP), %s) ON CONFLICT (id) DO UPDATE SET success=%s, dt=COALESCE(%s, CURRENT_TIMESTAMP), description=%s'
 
     while True:
         if sl.have_time():
@@ -83,7 +83,6 @@ LIMIT 1
                 count, end_time, err = 0, None, str(err)
                 logging.exception("Error while running job")
             success = bool(end_time != None)
-            end_time = end_time if success else 'CURRENT_TIMESTAMP'
 
             db.cursor.execute(sql_status, [id, success, end_time, err, success, end_time, err])
 
