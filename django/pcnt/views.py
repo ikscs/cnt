@@ -504,3 +504,23 @@ class RegisterCustomerView(PCNTBaseAPIView):
 
         data = {'customer_id': customer_id, 'legal_name': input_data['legal_name'], 'address': input_data['address'], 'country': input_data['country'], 'city': input_data['city'], 'email': input_data['email']}
         return Response(data, status=status.HTTP_201_CREATED)
+
+
+class CheckConnectionView(PCNTBaseAPIView):
+    def get(self, request):
+
+        origin_id = request.query_params.get('origin_id')
+        if not origin_id:
+            return Response({'success': False, 'description': 'origin_id missing'}, content_type='application/json')
+
+        try:
+            response = requests.post('http://camera_pooling:8000/check_connection.json', data={'origin_id': origin_id})
+            data = response.json()
+
+            if response.status_code != 200:
+                return Response({'success': False, 'description': 'backend error'}, content_type='application/json', status=response.status_code)
+
+            return Response({'success': data['is_connected'], 'description': data['error_txt']}, content_type='application/json')
+
+        except Exception as err:
+            return Response({'success': False, 'description': str(err)}, content_type='application/json')

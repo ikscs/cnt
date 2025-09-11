@@ -22,6 +22,7 @@ from .views import VReportScheduleViewSet
 from .views import ExportVCAViewSetByPoint
 
 from .views import VReportView
+from .views import CheckConnectionView
 
 router = DefaultRouter()
 router.register(r'age', AgeViewSet)
@@ -79,5 +80,6 @@ urlpatterns = [
     path('perm_report/', perm_report_list, name='perm_report-list'),
     path('perm_report/<str:app_id>/<int:report_id>/', perm_report_detail, name='perm_report-detail'),
 
-    path("v_perm_report/", VReportView.as_view(), name='v_report_view'),
+    path('v_perm_report/', VReportView.as_view(), name='v_report_view'),
+    path('check_connection/', CheckConnectionView.as_view(), name='check_connection'),
 ]
