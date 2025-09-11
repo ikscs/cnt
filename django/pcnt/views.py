@@ -322,13 +322,13 @@ class CallReportView(PCNTBaseAPIView):
 
             try:
                 query = row[0]
-                data = json.loads(row[1])
+                report_config = json.loads(row[1])
                 report_column = json.loads(row[4]) if row[4] else None
             except Exception as err:
                 return Response({'ok': False, 'data': [str(err)]}, content_type='application/json', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
             required_params = set()
-            for param in data['params']:
+            for param in report_config['params']:
                 required_params.add(param['name'])
                 query = query.replace(f":{param['name']}", f"%({param['name']})s")
 

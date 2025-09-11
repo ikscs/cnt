@@ -1,5 +1,6 @@
 import smtplib
 import ssl
+import mimetypes
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
@@ -40,14 +41,19 @@ class Sender:
                 continue
             ext = att_name.split('.')[-1].lower()
 
-            if ext in ('bmp', 'png', 'jpg', 'jpeg', 'gif'):
-                part = MIMEImage(att_data, _subtype=ext)
+            ctype, encoding = mimetypes.guess_type(att_name)
+            if ctype is None or encoding is not None:
+                ctype = 'application/octet-stream'
+            maintype, subtype = ctype.split('/', 1)
+
+            if maintype == 'image':
+                part = MIMEImage(att_data, _subtype=subtype)
             else:
-                part = MIMEBase('application', 'octet-stream')
+                part = MIMEBase(maintype, subtype)
                 part.set_payload(att_data)
                 encoders.encode_base64(part)
 
-            part.add_header('Content-Disposition', f'attachment; filename="{att_name}"')
+            part.add_header('Content-Disposition', 'attachment', filename=att_name)
             msg.attach(part)
 
 #        print(msg)
