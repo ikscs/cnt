@@ -4,7 +4,8 @@ from db_wrapper import DB
 from fastapi import FastAPI, Form, File, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 
-from camera_hik import Camera
+from camera_hik import Camera as Camera_hik
+from camera_dah import Camera as Camera_dah
 
 def is_script_running(script_name):
     for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
@@ -49,7 +50,7 @@ AND point_id={point_id}
     for origin_id, credentials, data in db.cursor.fetchall():
         if not data:
             continue
-        camera = Camera(credentials)
+        camera = Camera_hik(credentials)
 
         res = camera.set_osd(data['header'], data['title'], data['data'])
         sql = f'''
@@ -62,3 +63,30 @@ WHERE origin_id={origin_id}
     db.close()
 
     return JSONResponse(content={"status": 'Ok', "result": result, 'sql': sql})
+
+@app.post('/check_connection.json')
+async def check_connection(origin_id: int=Form(...)):
+    db = DB()
+    db.open()
+
+    sql = '''
+SELECT vendor, credentials FROM origin o
+JOIN origin_type t USING(origin_type_id)
+WHERE o.is_enabled AND t.enabled AND protocol='ISAPI' AND vendor IN ('Hikvision', 'Dahua')
+AND id=%s
+'''
+    db.cursor.execute(sql, origin_id)
+    row = db.cursor.fetchone()
+    db.close()
+
+    if not row or not row[1]:
+        return JSONResponse(content={"is_connected": False, "error_txt": f'Origin {origin_id} does not exists, not configured, disabled, or check not implemented'})
+
+    vendor, credentials = row
+
+    if vendor == 'Hikvision':
+        camera = Camera_hik(credentials)
+    elif vendor == 'Dahua':
+        camera = Camera_dah(credentials)
+
+    return JSONResponse(content={"is_connected": camera.is_connected, "error_txt": camera.error_txt})

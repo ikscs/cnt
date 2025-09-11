@@ -15,6 +15,7 @@ class Camera(Client):
 
         self.url = f"{self.proto}://{self.ip}:{self.port}"
         try:
+            self.error_txt = 'Ok'
             super().__init__(self.url, self.user, self.password)
             self.is_connected = True
         except Exception as err:

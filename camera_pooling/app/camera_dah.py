@@ -157,9 +157,13 @@ class Camera():
         for e in self.field_map:
             self.empty_rec[e] = {key: None for key in self.field_map[e].values()}
 
-        self.req = self._check_session()
-        self.is_connected = self.login()
-        #self.is_connected = True
+        try:
+            self.error_txt = 'Ok'
+            self.req = self._check_session()
+            self.is_connected = self.login()
+        except Exception as err:
+            self.is_connected = False
+            self.error_txt = str(err)
 
     def _check_session(self):
         url = f'{self.url}/magicBox.cgi?action=getHardwareVersion'
