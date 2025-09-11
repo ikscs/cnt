@@ -5,6 +5,8 @@ from db_wrapper import DB
 from sender import Sender, get_email_cfg
 from datetime import date
 
+from xlsx_report import mk_xlsx_report
+
 app = FastAPI()
 
 @app.get("/", response_class=HTMLResponse)
@@ -21,7 +23,8 @@ async def hello():
 async def send_mail(
     recipient: str=Form(...),
     subject: str=Form(...),
-    data: str=Form(...)
+    data: str=Form(...),
+    chart: str=Form(...)
 ):
     db = DB()
     db.open()
@@ -40,9 +43,13 @@ async def send_mail(
     today = date.today()
     subject = f'{subject} {today}'
 
-    body = list_to_html(json.loads(data), subject)
+    data = json.loads(data)
+    body = list_to_html(data, subject)
+    xlsx_data = mk_xlsx_report(subject, data)
+
     sender.recipient = recipient
-    sender.send_email(subject, '', html=body)
+
+    sender.send_email(subject, '', html=body, attachment_data=xlsx_data, attachment_name=f'{subject}.xlsx')
 
     return JSONResponse(content={"status": 'Ok'})
 

@@ -298,6 +298,14 @@ def custom_encoder(obj):
     raise TypeError(f"Type {type(obj)} not serializable")
 
 class CallReportView(PCNTBaseAPIView):
+    def commot_t(self, cursor, key):
+        query = f"SELECT common_t(%s);"
+        cursor.execute(query, [key])
+        rows = cursor.fetchall()
+        if not rows:
+            return key
+        return rows[0][0]
+
     def post(self, request):
         with connections['pcnt'].cursor() as cursor:
             lang = request.data.get('lang', 'uk')
@@ -343,9 +351,17 @@ class CallReportView(PCNTBaseAPIView):
                 r = {name: value for name, value in zip(field_names, row)}
                 data.append(r)
 
-        recipient = request.data.get('recipient', None)
+            recipient = request.data.get('recipient', None)
+            if recipient:
+                #Translate chart labels
+                chart = report_config.get('chart', dict())
+                for k, v in chart.items():
+                    if 'label' in k:
+                        chart[k] = self.commot_t(cursor, v)
+
+#        recipient = request.data.get('recipient', None)
         if recipient:
-            payload = {'recipient': recipient, 'subject': report_name, 'data': json.dumps(data, default=custom_encoder)}
+            payload = {'recipient': recipient, 'subject': report_name, 'data': json.dumps(data, default=custom_encoder), 'chart': json.dumps(chart, default=custom_encoder)}
             requests.post('http://manager:8000/send_mail.json', data=payload)
 
         return Response({'ok': True, 'data': data}, content_type='application/json')

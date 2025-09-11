@@ -3,6 +3,7 @@ import ssl
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
+from email.mime.image import MIMEImage
 from email import encoders
 import json
 
@@ -19,27 +20,39 @@ class Sender:
         self.start_tls = cfg['STARTTLS']
         self.encryption = cfg['encryption']# not used
 
-    def send_email(self, subject: str, body: str, html: str=None, attachment_data: bytes=None, attachment_name: str=None):
-        if not bytes:
-            return
-
-        #msg = MIMEMultipart()
-        msg = MIMEText(html if html else body, _subtype='html' if html else 'text', _charset='utf-8')
+    def send_email(self, subject, body, html=None, attachment_data=None, attachment_name=None):
+        if (body or html) and attachment_data:
+            msg = MIMEMultipart()
+            msg.attach(MIMEText(html if html else body, _subtype='html' if html else 'text', _charset='utf-8'))
+        else:
+            msg = MIMEText(html if html else body, _subtype='html' if html else 'text', _charset='utf-8')
 
         msg['From'] = self.sender_email
         msg['To'] = self.recipient
         msg['Subject'] = subject
 
-        # Attach email body
-        #msg.attach(MIMEText(body, 'plain', 'utf-8'))
+        if not isinstance(attachment_data, (list, tuple)):
+            attachment_data = [attachment_data,]
+            attachment_name = [attachment_name,]
 
-        # Attach in-memory file data if provided
-        if attachment_data and attachment_name:
-            part = MIMEBase('application', 'octet-stream')
-            part.set_payload(attachment_data)
-            encoders.encode_base64(part)
-            part.add_header('Content-Disposition', f'attachment; filename="{attachment_name}"')
+        for att_data, att_name in zip(attachment_data, attachment_name):
+            if not (att_data and att_name):
+                continue
+            ext = att_name.split('.')[-1].lower()
+
+            if ext in ('bmp', 'png', 'jpg', 'jpeg', 'gif'):
+                part = MIMEImage(att_data, _subtype=ext)
+            else:
+                part = MIMEBase('application', 'octet-stream')
+                part.set_payload(att_data)
+                encoders.encode_base64(part)
+
+            part.add_header('Content-Disposition', f'attachment; filename="{att_name}"')
             msg.attach(part)
+
+#        print(msg)
+#        return
+#        die
 
         # Send the email
         try:
@@ -88,16 +101,61 @@ if __name__ == "__main__":
     cfg = dotenv_values(env)
     sender = Sender(cfg)
 
-    image_path = "image1.jpg"
-    try:
-        with open(image_path, "rb") as f:
-            image_data = f.read()
-        image_name = image_path.split("/")[-1]
+    subject = "Test Email with In-Memory Attachment"
+    body = "Hello, simple text."
+    html = "<h1>Hello</h1>"
 
-        subject = "Test Email with In-Memory Attachment"
-        body = "Hello, this is a test email with an image loaded in memory."
+    if False:
+        # Simple mail
+        sender.send_email(subject, body=None, html=html)
+        #sender.send_email(subject, body=body)
 
-        sender.send_email(subject, body, attachment_data=image_data, attachment_name=image_name)
+    if False:
+        # Image mail
+        image_path = "image1.jpg"
+        try:
+            with open(image_path, "rb") as f:
+                image_data = f.read()
+            image_name = image_path.split("/")[-1]
+        except FileNotFoundError:
+            print(f"[Error] File '{image_path}' not found.")
+        sender.send_email(subject, body=body, html=None, attachment_data=image_data, attachment_name=image_name)
 
-    except FileNotFoundError:
-        print(f"[Error] File '{image_path}' not found.")
+    if False:
+        from xlsx_report import mk_xlsx_report
+        # Xlsx mail
+        data = [
+            {"Name": "Alice", "Age": 30, "City": "New York"},
+            {"Name": "Bob", "Age": 25, "City": "San Francisco"},
+            {"Name": "Charlie", "Age": 35, "City": "Chicago"},
+        ]
+        xlsx_data = mk_xlsx_report(subject, data)
+        sender.send_email(subject, body=None, html=html, attachment_data=xlsx_data, attachment_name=f'{subject}.xlsx')
+
+    if True:
+        # Combo mail
+        attachment_data = []
+        attachment_name = []
+
+        image_path = "image1.jpg"
+        try:
+            with open(image_path, "rb") as f:
+                image_data = f.read()
+            image_name = image_path.split("/")[-1]
+        except FileNotFoundError:
+            print(f"[Error] File '{image_path}' not found.")
+        attachment_data.append(image_data)
+        attachment_name.append(image_name)
+
+        from xlsx_report import mk_xlsx_report
+        # Xlsx mail
+        data = [
+            {"Name": "Alice", "Age": 30, "City": "New York"},
+            {"Name": "Bob", "Age": 25, "City": "San Francisco"},
+            {"Name": "Charlie", "Age": 35, "City": "Chicago"},
+        ]
+        xlsx_data = mk_xlsx_report(subject, data)
+        attachment_data.append(xlsx_data)
+        attachment_name.append(f'{subject}.xlsx')
+
+        sender.send_email(subject, body=None, html=html, attachment_data=attachment_data, attachment_name=attachment_name)
