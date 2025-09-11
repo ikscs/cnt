@@ -222,6 +222,8 @@ from .serializers import VCustomerOriginSerializer
 class VCustomerOriginViewSet(PCNTBaseReadOnlyViewSet):
     queryset = VCustomerOrigin.objects.all()
     serializer_class = VCustomerOriginSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['point_id',]
 
 from .models import VCustomerPerson
 from .serializers import VCustomerPersonSerializer
