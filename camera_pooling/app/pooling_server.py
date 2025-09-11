@@ -75,7 +75,7 @@ JOIN origin_type t USING(origin_type_id)
 WHERE o.is_enabled AND t.enabled AND protocol='ISAPI' AND vendor IN ('Hikvision', 'Dahua')
 AND id=%s
 '''
-    db.cursor.execute(sql, origin_id)
+    db.cursor.execute(sql, [origin_id])
     row = db.cursor.fetchone()
     db.close()
 

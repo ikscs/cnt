@@ -514,7 +514,7 @@ class CheckConnectionView(PCNTBaseAPIView):
             return Response({'success': False, 'description': 'origin_id missing'}, content_type='application/json')
 
         try:
-            response = requests.post('http://camera_pooling:8000/check_connection.json', data={'origin_id': origin_id})
+            response = requests.post('http://camera_pooling:8000/check_connection.json', data={'origin_id': origin_id}, timeout=10)
             data = response.json()
 
             if response.status_code != 200:
