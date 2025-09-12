@@ -49,6 +49,7 @@ class Order(models.Model):
     order_id = models.AutoField(primary_key=True)
     dt = models.DateTimeField(auto_now_add=True)
     type = models.CharField(max_length=50)
+    periodicity = models.CharField(max_length=50, null=True, blank=True)
 
     class Meta:
         db_table = 'orders'

@@ -45,13 +45,10 @@ sandbox_token	Успішна оплата по токену
     footer = '</body></html>'
 
     def get(self, request, *args, **kwargs):
-        liqpay = LiqPay(settings.LIQPAY['PUBLIC_KEY'], settings.LIQPAY['PRIVATE_KEY'])
-        params = liqpay_params
-
         rows = []
         field_names = []
         with connections['pcnt'].cursor() as cursor:
-            query = f'SELECT order_id, amount, currency, description, data FROM {ORDER_TABLE};'
+            query = f'SELECT order_id, amount, currency, description, data FROM {ORDER_TABLE} ORDER BY order_id;'
             cursor.execute(query)
             field_names = [e[0] for e in cursor.description]
             for row in cursor.fetchall():
@@ -66,19 +63,10 @@ sandbox_token	Успішна оплата по токену
             result += '<tr>'
             for k, v in row.items():
                 if k == 'order_id':
-                    for e in ['order_id', 'amount', 'currency', 'description']:
-                        params[e] = str(row[e])
-                    signature = liqpay.cnb_signature(params)
-                    data = liqpay.cnb_data(params)
-
                     form_html = f'''
-<a href="/api/billing/pay_liqpay/?order_id={row['order_id']}" target="_blank">Pay Now</a>
-<form method="POST" action="https://www.liqpay.ua/api/3/checkout" accept-charset="utf-8">
-<input type="hidden" name="data" value="{data}">
-<input type="hidden" name="signature" value="{signature}">
-<input type="submit" value="Pay Now">
-</form>
-<a href="/api/billing/pay_status/?order_id={row['order_id']}">Check status</a>
+<br><a href="/api/billing/pay_liqpay/?order_id={row['order_id']}" target="_blank">Pay Now</a>
+<br>
+<br><a href="/api/billing/pay_status/?order_id={row['order_id']}">Check status</a>
 '''
                     result += f'<td>{v}{form_html}</td>'
                 else:
@@ -100,6 +88,8 @@ class PayCallbackView(View):
             with connections['pcnt'].cursor() as cursor:
                 query = f'UPDATE {ORDER_TABLE} SET data=%s WHERE order_id=%s'
                 cursor.execute(query, [json.dumps(response), response.get('order_id')])
+                query = f'INSERT INTO billing.callback_log (data) VALUES (%s)'
+                cursor.execute(query, [json.dumps(response),])
         return HttpResponse()
 
 class PaymentLiqpayView(APIView):
@@ -111,7 +101,7 @@ class PaymentLiqpayView(APIView):
 
         field_names = []
         with connections['pcnt'].cursor() as cursor:
-            query = f'SELECT amount, currency, description FROM {ORDER_TABLE} WHERE order_id=%s;'
+            query = f'SELECT amount, currency, description, periodicity FROM {ORDER_TABLE} WHERE order_id=%s;'
             cursor.execute(query, [order_id,])
 
             row = cursor.fetchone()
@@ -121,6 +111,7 @@ class PaymentLiqpayView(APIView):
             amount = row[0]
             currency = row[1]
             description = row[2]
+            periodicity = row[3]
 
         liqpay = LiqPay(settings.LIQPAY['PUBLIC_KEY'], settings.LIQPAY['PRIVATE_KEY'])
         params = liqpay_params
@@ -128,6 +119,13 @@ class PaymentLiqpayView(APIView):
         params['currency'] = currency
         params['description'] = description
         params['order_id'] = str(order_id)
+
+        if periodicity:
+            params['action'] = 'subscribe'
+            params['subscribe_date_start'] = '2025-01-01 00:00:00'
+            params['subscribe_periodicity'] = periodicity
+        else:
+            params['action'] = 'pay'
 
         signature = liqpay.cnb_signature(params)
         data = liqpay.cnb_data(params)
