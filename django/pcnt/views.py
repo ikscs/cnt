@@ -523,14 +523,20 @@ class RegisterCustomerView(PCNTBaseAPIView):
 
 
 class CheckConnectionView(PCNTBaseAPIView):
-    def get(self, request):
+    def post(self, request):
+        if not request.data:
+            return Response({'success': False, 'description': 'credentials data missing'}, content_type='application/json')
+        return self.check_connection(origin_id=None, credentials=request.data)
 
+    def get(self, request):
         origin_id = request.query_params.get('origin_id')
         if not origin_id:
             return Response({'success': False, 'description': 'origin_id missing'}, content_type='application/json')
+        return self.check_connection(origin_id=origin_id, credentials=None)
 
+    def check_connection(self, origin_id, credentials):
         try:
-            response = requests.post('http://camera_pooling:8000/check_connection.json', data={'origin_id': origin_id}, timeout=10)
+            response = requests.post('http://camera_pooling:8000/check_connection.json', data={'origin_id': origin_id, 'credentials': credentials}, timeout=10)
             data = response.json()
 
             if response.status_code != 200:
