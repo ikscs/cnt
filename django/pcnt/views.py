@@ -342,7 +342,7 @@ class CallReportView(PCNTBaseAPIView):
             field_names = [e[0] for e in cursor.description]
 
             if report_column:
-                print(report_column, type(report_column))
+                #print(report_column, type(report_column))
                 column_dict = {r['field']: r['display'] for r in report_column}
                 field_names_new = [column_dict.get(e, e) for e in field_names]
                 field_names = field_names_new
@@ -529,7 +529,7 @@ class CheckConnectionView(PCNTBaseAPIView):
 
         if not (origin_type_id and credentials):
             return Response({'success': False, 'description': 'origin_type_id or credentials missing'}, content_type='application/json')
-        return self.check_connection(origin_id=None, origin_type_id=origin_type_id, credentials=credentials)
+        return self.check_connection(origin_id=None, origin_type_id=origin_type_id, credentials=json.dumps(credentials))
 
     def get(self, request):
         origin_id = request.query_params.get('origin_id')

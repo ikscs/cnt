@@ -2,6 +2,9 @@ import psutil
 from db_wrapper import DB
 
 from fastapi import FastAPI, Form, File, UploadFile
+from typing import Optional
+import json
+
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 
 from camera_hik import Camera as Camera_hik
@@ -65,24 +68,44 @@ WHERE origin_id={origin_id}
     return JSONResponse(content={"status": 'Ok', "result": result, 'sql': sql})
 
 @app.post('/check_connection.json')
-async def check_connection(origin_id: int=Form(...)):
+async def check_connection(
+        origin_id: Optional[int] = Form(None),
+        origin_type_id: Optional[int] = Form(None),
+        credentials: Optional[str] = Form(None),
+    ):
     db = DB()
     db.open()
 
-    sql = '''
+    if origin_id:
+        sql = '''
 SELECT vendor, credentials FROM origin o
 JOIN origin_type t USING(origin_type_id)
 WHERE o.is_enabled AND t.enabled AND protocol='ISAPI' AND vendor IN ('Hikvision', 'Dahua')
 AND id=%s
 '''
-    db.cursor.execute(sql, [origin_id])
-    row = db.cursor.fetchone()
-    db.close()
+        db.cursor.execute(sql, [origin_id])
+        row = db.cursor.fetchone()
+        db.close()
 
-    if not row or not row[1]:
-        return JSONResponse(content={"is_connected": False, "error_txt": f'Origin {origin_id} does not exists, not configured, disabled, or check not implemented'})
+        if not row or not row[1]:
+            return JSONResponse(content={"is_connected": False, "error_txt": f'Origin {origin_id} does not exists, not configured, disabled, or check not implemented'})
 
-    vendor, credentials = row
+        vendor, credentials = row
+
+    else:
+        sql = "SELECT vendor FROM origin_type WHERE origin_type_id=%s AND enabled AND protocol='ISAPI' AND vendor IN ('Hikvision', 'Dahua')"
+        db.cursor.execute(sql, [origin_type_id])
+        row = db.cursor.fetchone()
+        db.close()
+
+        if not row:
+            return JSONResponse(content={"is_connected": False, "error_txt": f'Origin_type_id {origin_type_id} does not exists, not configured, disabled, or check not implemented'})
+
+        vendor = row[0]
+        try:
+            credentials = json.loads(credentials)
+        except Exception as err:
+            return JSONResponse(content={"is_connected": False, "error_txt": str(err)})
 
     if vendor == 'Hikvision':
         camera = Camera_hik(credentials)
