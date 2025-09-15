@@ -6,6 +6,7 @@ from sender import Sender, get_email_cfg
 from datetime import date
 
 from xlsx_report import mk_xlsx_report
+from img_report import mk_img_report
 
 app = FastAPI()
 
@@ -44,12 +45,21 @@ async def send_mail(
     subject = f'{subject} {today}'
 
     data = json.loads(data)
+    chart = json.loads(chart)
     body = list_to_html(data, subject)
     xlsx_data = mk_xlsx_report(subject, data)
+    img_data = mk_img_report(chart, subject, data) if chart else None
+
+    if img_data:
+        attachment_data = [xlsx_data, img_data]
+        attachment_name = [f'{subject}.xlsx', f'{subject}.png']
+    else:
+        attachment_data = xlsx_data
+        attachment_name = f'{subject}.xlsx'
 
     sender.recipient = recipient
 
-    sender.send_email(subject, '', html=body, attachment_data=xlsx_data, attachment_name=f'{subject}.xlsx')
+    sender.send_email(subject, '', html=body, attachment_data=attachment_data, attachment_name=attachment_name)
 
     return JSONResponse(content={"status": 'Ok'})
 

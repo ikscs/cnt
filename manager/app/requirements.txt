@@ -7,3 +7,4 @@ python-multipart
 fastapi==0.98.0
 pandas
 openpyxl
+matplotlib
