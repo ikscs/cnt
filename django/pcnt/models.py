@@ -550,7 +550,7 @@ class Theme(models.Model):
     app_id = models.ForeignKey(App, db_column='app_id', to_field='app_id', on_delete=models.DO_NOTHING)
     name = models.CharField(max_length=255)
     value = models.JSONField()
-    sortotd = models.IntegerField((null=True, blank=True)
+    sortord = models.IntegerField(null=True, blank=True)
     enabled = models.BooleanField()
 
     class Meta:
