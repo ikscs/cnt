@@ -248,10 +248,10 @@ class UserCacheViewSet(PCNTBaseViewSet):
 from .models import Theme
 from .serializers import ThemeSerializer
 class ThemeViewSet(PCNTBaseViewSet):
-    queryset = Theme.objects.all()
+    queryset = Theme.objects.order_by('sortord')
     serializer_class = ThemeSerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['app_id']
+    filterset_fields = ['app_id', 'enabled']
 
 from .models import ReportSchedule
 from .serializers import ReportScheduleSerializer
