@@ -268,6 +268,7 @@ class VReportScheduleViewSet(PCNTBaseReadOnlyViewSet):
 class CallDbFunctionView(PCNTBaseAPIView):
     def post(self, request):
         func = request.query_params.get("func")
+        lang = request.query_params.get('lang', 'uk')
 
         if not func:
             return Response({"error": "Missing 'func' parameter"}, status=status.HTTP_400_BAD_REQUEST)
@@ -277,6 +278,9 @@ class CallDbFunctionView(PCNTBaseAPIView):
             input_data = json.dumps(request.data)
 
             with connections['pcnt'].cursor() as cursor:
+                query = "SET app.lang = %s;"
+                cursor.execute(query, [lang])
+
                 query = f"SELECT {escaped_func}(%s);"
                 cursor.execute(query, [input_data])
                 rows = cursor.fetchall()
