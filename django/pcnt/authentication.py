@@ -103,7 +103,7 @@ class AuthUser:
             if self.customer_id == None:
                 cursor.execute("CALL public.set_rls(%s, %s, %s);", [self.tenant_id, self.id, self.mode])
             else:
-                cursor.execute("SET ROLE app_user; SET app.customer_id = %s;", [self.customer_id,])
+                cursor.execute("CALL public.set_customer_tz(%s); SET ROLE app_user; SET app.customer_id = %s;", [self.customer_id, self.customer_id,])
 
     @property
     def is_authenticated(self):
