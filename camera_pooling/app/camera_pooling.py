@@ -79,8 +79,8 @@ LIMIT 1
             try:
                 count, end_time = runners[vendor](credentials, origin, id, last_dt, params)
                 err = None
-            except Exception as err:
-                count, end_time, err = 0, None, str(err)
+            except Exception as error:
+                count, end_time, err = 0, None, str(error)
                 logging.exception("Error while running job")
             success = bool(end_time != None)
 
