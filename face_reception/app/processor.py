@@ -64,6 +64,7 @@ RETURNING file_uuid, get_engine(file_uuid) AS engine, title;
             engine_demography = res[1].get('demography') if res[1] else None
             engine_detection = res[1].get('face_detection') if res[1] else None
             face_width_px = res[1].get('face_width_px', 0) if res[1] else 0
+            min_face_confidence = res[1].get('min_face_confidence', 0) if res[1] else 0
             title = res[2]
             self.db.conn.commit()
 
@@ -80,6 +81,14 @@ RETURNING file_uuid, get_engine(file_uuid) AS engine, title;
 
             file_data = BytesIO(content)
             files = {'f': (file_uuid, file_data, 'application/octet-stream')}
+
+            if min_face_confidence:
+                url = self.se.FACE_CONFIDENCE_URL
+                data = self.se.post_engine(url, None, files)
+                if not data or (data.get('face_confidence', 0) < min_face_confidence):
+                    print(file_uuid, data.get('face_confidence'), 'skipped')
+                    continue
+                file_data.seek(0)
 
             data = engine_embedding['param'] if engine_embedding['param'] else {}
             if data.get('area'):
