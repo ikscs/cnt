@@ -298,6 +298,7 @@ class Origin(models.Model):
     face_width_px = models.SmallIntegerField(default=40)
     poling_period_s = models.IntegerField(default=180)
     min_face_confidence = models.FloatField(blank=True, null=True, default=0.13)
+    deleted = models.BooleanField(default=False)
 
     class Meta:
         managed = False
