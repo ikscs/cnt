@@ -297,6 +297,7 @@ class Origin(models.Model):
     name = models.TextField(blank=True, null=True)
     face_width_px = models.SmallIntegerField(default=40)
     poling_period_s = models.IntegerField(default=180)
+    min_face_confidence = models.FloatField(blank=True, null=True, default=0.13)
 
     class Meta:
         managed = False
