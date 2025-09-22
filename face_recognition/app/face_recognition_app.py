@@ -213,7 +213,7 @@ async def demo_person_json(
     face_confidence = predict.get_confidence(image)
     counter.stop(request.url.path, None)
 
-    return JSONResponse(content={'face_confidence': face_confidence})
+    return JSONResponse(content={'face_confidence': float(face_confidence)})
 
 def convert_numpy(obj):
     if isinstance(obj, dict):

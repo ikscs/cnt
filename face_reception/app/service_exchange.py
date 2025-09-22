@@ -14,6 +14,7 @@ class Service_exchange():
         self.EVENTS_URL = f'{self.RECEPTION}/events.json'
         self.OSD_URL = 'http://camera_pooling:8000/set_osd.json'
         self.KV_DB_URL = 'http://kv_db:5000'
+        self.FACE_CONFIDENCE_URL = 'http://face_recognition:8000/get_confidence.json'
 
         self.service = {
             'processor': 'http://localhost:8000/processor.json',
