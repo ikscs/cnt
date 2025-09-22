@@ -3,6 +3,7 @@ import cv2
 class Predict():
     AGE_MODEL = cv2.dnn.readNetFromCaffe("age_deploy.prototxt", "age_net.caffemodel")
     GENDER_MODEL = cv2.dnn.readNetFromCaffe("gender_deploy.prototxt", "gender_net.caffemodel")
+    NET = cv2.dnn.readNetFromCaffe("deploy.prototxt.txt", "res10_300x300_ssd_iter_140000.caffemodel")
 
     AGE_LIST = ['(0-2)', '(4-6)', '(8-12)', '(15-20)', '(25-32)', '(38-43)', '(48-53)', '(60-100)']
     GENDER_LIST = ['Man', 'Woman']
@@ -50,6 +51,21 @@ class Predict():
         else:
             plus = 0
         return round(self.MIDDLE[idx] + plus - minus)
+
+    def get_confidence(self, image):
+        # Prepare input blob
+        blob = cv2.dnn.blobFromImage(cv2.resize(image, (300, 300)), 1.0, (300, 300), (104.0, 177.0, 123.0))
+
+        # Forward pass
+        self.NET.setInput(blob)
+        detections = self.NET.forward()
+
+        mc = 0
+        for i in range(detections.shape[2]):
+            confidence = detections[0, 0, i, 2]
+            mc = max(mc, confidence)
+
+        return mc
 
 
 if __name__ == '__main__':

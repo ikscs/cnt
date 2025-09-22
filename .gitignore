@@ -8,6 +8,7 @@ __pycache__/
 *.whl
 *.caffemodel
 *.prototxt
+*.prototxt.txt
 huggingface/
 www/
 log/

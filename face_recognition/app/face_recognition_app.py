@@ -191,6 +191,30 @@ async def demo_person_json(
 
     return JSONResponse(content=predict.demography)
 
+@app.post('/get_confidence.json')
+async def demo_person_json(
+    request: Request,
+    f: UploadFile = File(...),
+    data: str = Form(None)
+
+):
+
+    try:
+        file_bytes = await f.read()
+    except Exception as err:
+        return JSONResponse(content={"error": str(err)}, status_code=400)
+
+    try:
+        image = face_recognition.load_image_file(io.BytesIO(file_bytes))
+    except Exception as err:
+        return JSONResponse(content={"error": str(err)}, status_code=400)
+
+    counter.start(request.url.path, None)
+    face_confidence = predict.get_confidence(image)
+    counter.stop(request.url.path, None)
+
+    return JSONResponse(content={'face_confidence': face_confidence})
+
 def convert_numpy(obj):
     if isinstance(obj, dict):
         return {key: convert_numpy(value) for key, value in obj.items()}
