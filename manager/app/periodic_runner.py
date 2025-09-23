@@ -7,6 +7,8 @@ from datetime import datetime, timedelta
 from dateutil import tz
 import json
 
+from info_bot import bot_report
+
 class DB:
     def open(self):
         self.conn = psycopg2.connect(host=os.environ['POSTGRES_HOST'], port=os.environ.get('POSTGRES_PORT'),
@@ -108,6 +110,20 @@ ORDER BY m.id, h.collected_at DESC;
 
     sql_insert = 'INSERT INTO metric_history (metric_id, "value", status) VALUES (%s, %s, %s)'
 
+    sql_last_values = '''
+SELECT mh.metric_id, mh.status, mh.value, m.metric_name
+FROM metric_history mh
+INNER JOIN (
+    SELECT metric_id, MAX(collected_at) AS latest_collected
+    FROM metric_history
+    GROUP BY metric_id
+) latest ON mh.metric_id = latest.metric_id AND mh.collected_at = latest.latest_collected
+JOIN metric m ON mh.metric_id=m.id
+WHERE m.enable
+'''
+    db.cursor.execute(sql_last_values)
+    last_values = {id: {'status': status, 'value': value, 'name': name} for id, status, value, name in db.cursor.fetchall()}
+
     db.cursor.execute(sql_select)
     for id, metric_cmd, metric_param, cron, template, collected_at in db.cursor.fetchall():
         itr = croniter(cron, dt)
@@ -152,7 +168,13 @@ ORDER BY m.id, h.collected_at DESC;
             db.cursor.execute(sql_insert, (id, value, st))
 
     db.conn.commit()
+
+    db.cursor.execute(sql_last_values)
+    new_values = {id: {'status': status, 'value': value, 'name': name} for id, status, value, name in db.cursor.fetchall()}
+
     db.close()
+
+    bot_report(last_values, new_values)
 
 if __name__ == "__main__":
 #    from dotenv import load_dotenv
