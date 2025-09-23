@@ -23,7 +23,7 @@ def get_fresh_alarms(old_alarms, new_alarms):
                 fresh_alarms[k] = delta
     return fresh_alarms
 
-def analize(old_alarms, new_alarms, fresh_alarms, last_values):
+def analize(old_alarms, new_alarms, fresh_alarms, new_values):
     is_state_old_ok = True
     for v in old_alarms.values():
        if v:
@@ -40,8 +40,8 @@ def analize(old_alarms, new_alarms, fresh_alarms, last_values):
 
     message_data = dict()
     for id, kv in fresh_alarms.items():
-        data = last_values[id].get('value', {})
-        name = last_values[id].get('name', '')
+        data = new_values[id].get('value', {})
+        name = new_values[id].get('name', '')
         message_data[name] = dict()
         for k in kv:
             message_data[name][k] = data.get(k)
@@ -56,7 +56,7 @@ def bot_report(last_values, new_values):
 
     fresh_alarms = get_fresh_alarms(old_alarms, new_alarms)
 
-    is_state_ok, is_state_updated, message_data = analize(old_alarms, new_alarms, fresh_alarms, last_values)
+    is_state_ok, is_state_updated, message_data = analize(old_alarms, new_alarms, fresh_alarms, new_values)
 
     if is_state_ok:
         text = f'🟢 <b>OK</b>\n'
