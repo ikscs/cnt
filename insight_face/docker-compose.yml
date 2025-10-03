@@ -1,0 +1,17 @@
+services:
+  insight_face:
+    container_name: insight_face
+    hostname: insight_face
+    build: .
+#    ports:
+#      - "8088:8000"
+    volumes:
+      - /var/screenshots:/var/screenshots
+    networks:
+      - swag_network
+    restart: always
+
+networks:
+  swag_network:
+    driver: bridge
+    external: true
