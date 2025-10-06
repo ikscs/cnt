@@ -281,7 +281,8 @@ class Method(models.Model):
     embedding_enabled = models.BooleanField()
     demography_enabled = models.BooleanField()
     param = models.JSONField(blank=True, null=True)
-    max_distance = models.FloatField(blank=True, null=True)
+    max_distance = models.FloatField()
+    max_distance_quick = models.FloatField()
 
     class Meta:
         managed = False
@@ -299,6 +300,7 @@ class Origin(models.Model):
     poling_period_s = models.IntegerField(default=180)
     min_face_confidence = models.FloatField(blank=True, null=True, default=0.13)
     deleted = models.BooleanField(default=False)
+    entry_time_s = models.IntegerField(default=20)
 
     class Meta:
         managed = False
