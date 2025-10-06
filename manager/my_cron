@@ -14,3 +14,5 @@
 
 #40 4 * * * /app/docker_restart.py face_reception
 #30 3 * * * /app/docker_kill_zombie.py face_reception
+
+9 0/3 * * * /app/lost_faces_approve.py
