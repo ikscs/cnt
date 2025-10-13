@@ -38,6 +38,9 @@ def process_email(email_bytes):
             fnam = attachment.get_filename()
             if not fnam:
                 continue
+            if fnam and fnam.lower().startswith('=?utf-8?b?'):
+                fnam = decode_subject(fnam)
+
             ext = fnam.rsplit('.')[-1]
             if ext.lower() not in ('png', 'bmp', 'jpg', 'jpeg', 'webp', 'gif'):
                 continue
