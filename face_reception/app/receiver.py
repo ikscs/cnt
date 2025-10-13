@@ -93,7 +93,11 @@ async def upload_json(
     else:
         data = [file_uuid, origin, origin_id, title, f.filename, ts]
 
-    db.cursor.execute(sql, data)
+    try:
+        db.cursor.execute(sql, data)
+    except Exception as err:
+        print(str(err))
+
     db.close()
 
     async with httpx.AsyncClient() as client:
