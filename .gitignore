@@ -21,3 +21,4 @@ linuxserver/swag/config/nginx/auth*
 linuxserver/swag/config/nginx/ldap*
 linuxserver/swag/config/.donoteditthisfile.conf
 *.pem
+*.jwk

@@ -31,6 +31,4 @@ for api in "${INSTANCES[@]}"; do
   postgrest "$conf_file" &
 done
 
-rm /etc/postgrest/api.template.conf
-
 wait
