@@ -1,0 +1,166 @@
+import os
+import requests
+from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
+
+from requests.auth import HTTPDigestAuth
+import base64
+
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+class Camera():
+    def __init__(self, credentials, max_results=200, timeout=10):
+        self.host = credentials['host']
+        self.proto = credentials['proto']
+        self.port = credentials['port']
+        self.user = credentials['user']
+        self.password = credentials['password']
+        self.chanel = credentials.get('chanel', 1)
+
+        self.params = ''
+        self.max_results = max_results
+
+        self.tz = ZoneInfo('Europe/Kyiv')
+
+        self.url = f"{self.proto}://{self.host}:{self.port}/API"
+        self.timeout = float(timeout)
+
+        self.req = self._check_session()
+        self.is_connected = bool(self.req)
+
+    def _check_session(self):
+        url = f'{self.url}/Web/Login'
+        session = requests.Session()
+        session.verify = False
+        session.auth = HTTPDigestAuth(self.user, self.password)
+
+        try:
+            response = session.post(url, timeout=self.timeout)
+        except Exception as err:
+            self.error_txt = str(err)
+            print(str(err))
+            return False
+
+        if response.status_code != 200:
+            return False
+        response.raise_for_status()
+
+        session.headers.update({'X-csrftoken': response.headers['X-csrftoken'], 'Cookie': response.headers['Set-Cookie']})
+        return session
+
+    def request(self, point, data={}):
+        if not self.is_connected:
+            return False
+        url = f'{self.url}/{point}'
+        data = {"version": "1.0", "data": data}
+        try:
+            response = self.req.post(url, json=data, verify=False, timeout=self.timeout)
+            if response.status_code != 200:
+                return False
+            return response.json()
+        except Exception as err:
+            print(str(err))
+            return False
+        return False
+
+    def heart_beat(self):
+        return self.request('Login/Heartbeat')
+
+    def get_sysinfo(self):
+        return self.request('SystemInfo/Base/Get')
+
+    def get_event(self):
+        return self.request('Event/Check')
+
+    def get_snapshot(self):
+        result = self.request('Snapshot/Get', {"channel": "CH1", "snapshot_resolution": "1920*1080"})
+        if not result:
+            return False
+        try:
+            return result["data"]["img_data"]
+        except Exception as err:
+            print(str(err))
+            return False
+        return False
+
+    def make_action(self, action, plates=[]):
+        points = {'get': 'AI/AddedPlates/GetId', 'add': 'AI/Plates/Add', 'remove': 'AI/Plates/Remove'}
+        point = points.get(action)
+
+        if action == 'get':
+            point = 'AI/AddedPlates/GetId'
+            plateinfo = []
+            data = {"MsgId": None, "PlateInfo": plateinfo, "GrpId":[1],}
+
+        elif action == 'add':
+            point = 'AI/Plates/Add'
+            plateinfo = [{"Id": e, "GrpId": 1} for e in plates]
+            data = {"MsgId": None, "PlateInfo": plateinfo,}
+
+        elif action == 'remove':
+            point = 'AI/Plates/Remove'
+            plateinfo = [{"Id": e} for e in plates]
+            data = {"MsgId": None, "PlateInfo": plateinfo,}
+
+        return self.request(point, data)
+
+
+    def load_plate_events(self, dt_start, dt_end):
+
+        point = 'AI/SnapedObjects/SearchPlate'
+        data = {"MsgId": None, "StartTime": f"{dt_start:%Y-%m-%d %H:%M:%S}", "EndTime": f"{dt_end:%Y-%m-%d %H:%M:%S}", "MaxErrorCharCnt": 3, "SortType": 0, "Engine": 0,}
+        if not self.request(point, data):
+            return False
+
+        point = 'AI/SnapedObjects/GetByIndex'
+        data = {"MsgId": None, "Engine": 0, "StartIndex": 0, "Count": self.max_results, "WithObjectImage": 0, "WithBackgroud": 0, "SimpleInfo": 1,}
+        result = self.request(point, data)
+        if not result:
+            return False
+
+        uuids = [rec['UUId'] for rec in result['data']['SnapedObjInfo']]
+
+        point = 'AI/SnapedObjects/GetById'
+        data = {"MsgId": None, "Engine": 0, "UUIds": uuids, "WithObjectImage": 0, "WithBackgroud": 0,}
+        result = self.request(point, data)
+        if not result:
+            return False
+
+        results = []
+        try:
+            for r in result['data']['SnapedObjInfo']:
+                results.append([r["UUId"], self.int_to_dttz(r["StartTime"]), self.int_to_dttz(r["EndTime"]), r["GrpId"], r["Plate"] if r["Plate"] else None, r["MatchedPlate"] if r["MatchedPlate"] else None,])
+        except Exception as err:
+            print(result)
+            print(str(err))
+
+        point = 'AI/SnapedObjects/StopSearch'
+        data = {"MsgId": None, "Engine": 0,}
+        self.request(point, data)
+
+        return results
+
+    def int_to_dttz(self, utc):
+        dt = datetime.fromtimestamp(utc)
+        dt = dt.astimezone(timezone.utc)
+        dt = dt.replace(tzinfo=self.tz)
+        return dt
+
+if __name__ == "__main__":
+    from dotenv import dotenv_values
+    credentials = dotenv_values('.env')
+
+    camera = Camera(credentials)
+    print(f'Connected: {camera.is_connected}')
+
+    data = camera.make_action('get')
+    print(data)
+    print()
+
+    dt_end = datetime.now()
+    dt_start = dt_end - timedelta(hours=1)
+
+    results = camera.load_plate_events(dt_start, dt_end)
+    for result in results:
+        print(result)

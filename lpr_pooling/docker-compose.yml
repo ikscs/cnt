@@ -1,0 +1,26 @@
+services:
+  lpr_pooling:
+    container_name: lpr_pooling
+    build: .
+#    ports:
+#      - "8089:8000"
+    volumes:
+      - /var/screenshots:/var/screenshots
+    env_file: ../.env
+    environment:
+      POSTGRES_SCHEMA: "lpr"
+    networks:
+      - swag_network
+    restart: always
+
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sS http://localhost:8000 | grep 'healthy' || exit 1"]
+      interval: 60s
+      retries: 3
+      start_period: 10s
+      timeout: 5s
+
+networks:
+  swag_network:
+    driver: bridge
+    external: true
