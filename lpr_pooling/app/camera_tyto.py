@@ -18,10 +18,15 @@ class Camera():
         self.password = credentials['password']
         self.chanel = credentials.get('chanel', 1)
 
+        tz_default = 'Europe/Kyiv'
+        tz = credentials.get('timezone', tz_default)
+        try:
+            self.tz = ZoneInfo(tz)
+        except Exception as err:
+            self.tz = ZoneInfo(tz_default)
+
         self.params = ''
         self.max_results = max_results
-
-        self.tz = ZoneInfo('Europe/Kyiv')
 
         self.url = f"{self.proto}://{self.host}:{self.port}/API"
         self.timeout = float(timeout)
@@ -109,7 +114,7 @@ class Camera():
     def load_plate_events(self, dt_start, dt_end):
 
         point = 'AI/SnapedObjects/SearchPlate'
-        data = {"MsgId": None, "StartTime": f"{dt_start:%Y-%m-%d %H:%M:%S}", "EndTime": f"{dt_end:%Y-%m-%d %H:%M:%S}", "MaxErrorCharCnt": 3, "SortType": 0, "Engine": 0,}
+        data = {"MsgId": None, "StartTime": self.dt_to_local(dt_start), "EndTime": self.dt_to_local(dt_end), "MaxErrorCharCnt": 3, "SortType": 0, "Engine": 0,}
         if not self.request(point, data):
             return False
 
@@ -146,6 +151,10 @@ class Camera():
         dt = dt.astimezone(timezone.utc)
         dt = dt.replace(tzinfo=self.tz)
         return dt
+
+    def dt_to_local(self, dt):
+        dt = dt.astimezone(self.tz)
+        return f"{dt:%Y-%m-%d %H:%M:%S}"
 
 if __name__ == "__main__":
     from dotenv import dotenv_values
