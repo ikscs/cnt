@@ -110,7 +110,6 @@ class Camera():
 
         return self.request(point, data)
 
-
     def load_plate_events(self, dt_start, dt_end):
 
         point = 'AI/SnapedObjects/SearchPlate'
@@ -155,6 +154,19 @@ class Camera():
     def dt_to_local(self, dt):
         dt = dt.astimezone(self.tz)
         return f"{dt:%Y-%m-%d %H:%M:%S}"
+
+    def get_by_uuid(self, uuid):
+        point = 'AI/SnapedObjects/GetById'
+        data = {"MsgId": None, "Engine": 0, "UUIds": [uuid], "WithObjectImage": 1, "WithBackgroud": 1,}
+        result = self.request(point, data)
+        if not result:
+            return False
+
+        try:
+            return {'object': result['data']['SnapedObjInfo'][0]['ObjectImage'], 'background': result['data']['SnapedObjInfo'][0]['Background']}
+        except Exception as err:
+            return False
+
 
 if __name__ == "__main__":
     from dotenv import dotenv_values
