@@ -9,7 +9,7 @@ AS $BODY$
 DECLARE
 result_ts TIMESTAMPTZ;
 BEGIN
-    SELECT INTO result_ts ts_start FROM lpr.lpr_events WHERE entity_id=entity_id_inp ORDER BY id DESC LIMIT 1;
+    SELECT INTO result_ts ts_start FROM lpr.lpr_event WHERE entity_id=entity_id_inp ORDER BY id DESC LIMIT 1;
 	IF result_ts IS NOT NULL THEN RETURN result_ts; END IF;
 
     --Alternative ts
