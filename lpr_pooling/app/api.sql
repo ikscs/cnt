@@ -150,3 +150,31 @@ if not result:
 return json.dumps(result, ensure_ascii=False)
 $BODY$;
 ALTER FUNCTION lpr.get_event_images(integer, text) OWNER TO cnt;
+
+
+-- FUNCTION: lpr.origin_sync(integer)
+-- DROP FUNCTION IF EXISTS lpr.origin_sync(integer);
+CREATE OR REPLACE FUNCTION lpr.origin_sync(origin_id integer)
+    RETURNS jsonb
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE PARALLEL UNSAFE
+AS $BODY$
+DECLARE
+    plates TEXT[];
+BEGIN
+	SELECT array_agg(registration_number) INTO plates FROM lpr.lpr_o2p
+	JOIN lpr.lpr_origin o USING(entity_id)
+	JOIN lpr.lpr_origin_type t USING(origin_type_id)
+	WHERE protocol='ISAPI' AND vendor IN ('Tyto')
+	AND is_enabled AND NOT is_deleted AND entity_id=origin_id;
+
+	RAISE INFO 'plates=%', plates;
+	IF plates IS NULL THEN
+		RETURN NULL;
+	END IF;
+
+	RETURN lpr.plates_action(origin_id, 'sync', plates);
+END;
+$BODY$;
+ALTER FUNCTION lpr.origin_sync(integer) OWNER TO cnt;

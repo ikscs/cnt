@@ -108,6 +108,42 @@ class Camera():
             plateinfo = [{"Id": e} for e in plates]
             data = {"MsgId": None, "PlateInfo": plateinfo,}
 
+        elif action == 'sync':
+            plates_in = set(plates)
+            result = self.make_action('get')
+            if not result:
+                return False
+            try:
+                plates_ok = set(result['PlatesId'])
+            except Exception as err:
+                print(str(err))
+                return False
+
+            result_del, result_add = 0, 0
+            plates_del = plates_ok - plates_in
+            if plates_del:
+                result = self.make_action('remove', plates_del)
+                if not result:
+                    return False
+                try:
+                    result_del = sum(result['data']['Result'])
+                except Exception as err:
+                    print(str(err))
+                    return False
+
+            plates_add = plates_in - plates_ok
+            if plates_add:
+                result = self.make_action('add', plates_add)
+                if not result:
+                    return False
+                try:
+                    result_add = sum(result['data']['Result'])
+                except Exception as err:
+                    print(str(err))
+                    return False
+
+            return {'data': {'total': len(plates), 'add': result_add, 'remove': result_del}}
+
         return self.request(point, data)
 
     def load_plate_events(self, dt_start, dt_end):
