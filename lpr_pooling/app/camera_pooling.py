@@ -56,7 +56,7 @@ LIMIT 1
 
     sql_write_events = 'INSERT INTO lpr_event (entity_id, uuid, ts_start, ts_end, group_id, registration_number, matched_number) VALUES (_ENTITY_ID_, %s, %s, %s, %s, %s, %s) ON CONFLICT (entity_id, uuid) DO NOTHING'
 
-    sql_sync = f"PERFORM origin_sync(%s)"
+    sql_sync = f"SELECT origin_sync(%s)"
 
     while True:
         if sl.have_time():
