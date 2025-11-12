@@ -114,7 +114,7 @@ class Camera():
             if not result:
                 return False
             try:
-                plates_ok = set(result['PlatesId'])
+                plates_ok = set(result['data']['PlatesId'])
             except Exception as err:
                 print(str(err))
                 return False
@@ -126,7 +126,7 @@ class Camera():
                 if not result:
                     return False
                 try:
-                    result_del = sum(result['data']['Result'])
+                    result_del = result['data']['Count']
                 except Exception as err:
                     print(str(err))
                     return False
@@ -137,7 +137,7 @@ class Camera():
                 if not result:
                     return False
                 try:
-                    result_add = sum(result['data']['Result'])
+                    result_add = result['data']['Count']
                 except Exception as err:
                     print(str(err))
                     return False
