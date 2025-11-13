@@ -89,7 +89,7 @@ class Camera():
             return False
         return False
 
-    def make_action(self, action, plates=[]):
+    def make_action(self, action, plates=[], brands=[], owners=[]):
         points = {'get': 'AI/AddedPlates/GetId', 'add': 'AI/Plates/Add', 'remove': 'AI/Plates/Remove'}
         point = points.get(action)
 
@@ -100,7 +100,16 @@ class Camera():
 
         elif action == 'add':
             point = 'AI/Plates/Add'
-            plateinfo = [{"Id": e, "GrpId": 1} for e in plates]
+            if not brands: brands = ['' for e in plates]
+            if not owners: owners = ['' for e in plates]
+            plateinfo = [{"Id": k, "GrpId": 1, "CarBrand": brand, "Owner": owner} for k, brand, owner in zip(plates, brands, owners)]
+            data = {"MsgId": None, "PlateInfo": plateinfo,}
+
+        elif action == 'modify':
+            point = 'AI/Plates/Modify'
+            if not brands: brands = ['' for e in plates]
+            if not owners: owners = ['' for e in plates]
+            plateinfo = [{"Id": k, "GrpId": 1, "CarBrand": brand, "Owner": owner} for k, brand, owner in zip(plates, brands, owners)]
             data = {"MsgId": None, "PlateInfo": plateinfo,}
 
         elif action == 'remove':
@@ -212,6 +221,10 @@ if __name__ == "__main__":
     print(f'Connected: {camera.is_connected}')
 
     data = camera.make_action('get')
+    print(data)
+    print()
+
+    data = camera.make_action('modify', ['QWERTY'], ['ABC'], ['DEF'])
     print(data)
     print()
 
