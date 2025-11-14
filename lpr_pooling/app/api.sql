@@ -49,7 +49,7 @@ query = plpy.execute(sql)
 if not query:
     return None
 credentials = json.loads(query[0]['credentials'])
-	
+
 camera = Camera(credentials)
 if not camera.is_connected:
     return None
@@ -97,7 +97,7 @@ query = plpy.execute(sql)
 if not query:
     return None
 credentials = json.loads(query[0]['credentials'])
-	
+
 camera = Camera(credentials)
 if not camera.is_connected:
     return None
@@ -109,6 +109,46 @@ if not result:
 return json.dumps(result, ensure_ascii=False)
 $BODY$;
 ALTER FUNCTION lpr.plates_action(integer, text, text[]) OWNER TO cnt;
+
+
+-- FUNCTION: lpr.plates_modify(integer, text[], text[], text[])
+-- DROP FUNCTION IF EXISTS lpr.plates_modify(integer, text[], text[], text[]);
+CREATE OR REPLACE FUNCTION lpr.plates_modify(origin_id integer, plates text[], brands text[], owners text[])
+    RETURNS jsonb
+    LANGUAGE 'plpython3u'
+    COST 100
+    VOLATILE PARALLEL UNSAFE
+AS $BODY$
+import sys
+import json
+
+script_dir = '/opt/docker/lpr_pooling/app'
+
+if script_dir not in sys.path:
+    sys.path.append(script_dir)
+
+from camera_tyto import Camera
+
+sql = f"""SELECT credentials::JSONB FROM lpr.lpr_origin JOIN lpr.lpr_origin_type USING(origin_type_id)
+WHERE protocol='ISAPI' AND vendor IN ('Tyto')
+AND is_enabled AND NOT is_deleted AND entity_id={origin_id}"""
+
+query = plpy.execute(sql)
+if not query:
+    return None
+credentials = json.loads(query[0]['credentials'])
+
+camera = Camera(credentials)
+if not camera.is_connected:
+    return None
+
+result = camera.make_action('modify', plates, brands, owners)
+if not result:
+    return None
+
+return json.dumps(result, ensure_ascii=False)
+$BODY$;
+ALTER FUNCTION lpr.plates_modify(integer, text[], text[], text[]) OWNER TO cnt;
 
 
 -- FUNCTION: lpr.get_event_images(integer, text)
@@ -169,7 +209,7 @@ BEGIN
 	WHERE protocol='ISAPI' AND vendor IN ('Tyto')
 	AND is_enabled AND NOT is_deleted AND entity_id=origin_id;
 
-	RAISE INFO 'plates=%', plates;
+	--RAISE INFO 'plates=%', plates;
 	IF plates IS NULL THEN
 		RETURN NULL;
 	END IF;
@@ -178,3 +218,38 @@ BEGIN
 END;
 $BODY$;
 ALTER FUNCTION lpr.origin_sync(integer) OWNER TO cnt;
+
+
+-- FUNCTION: lpr.origin_sync_full(integer)
+-- DROP FUNCTION IF EXISTS lpr.origin_sync_full(integer);
+CREATE OR REPLACE FUNCTION lpr.origin_sync_full(origin_id integer)
+    RETURNS jsonb
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE PARALLEL UNSAFE
+AS $BODY$
+DECLARE
+    plates TEXT[];
+    brands TEXT[];
+    owners TEXT[];
+BEGIN
+	SELECT array_agg(registration_number ORDER BY registration_number),
+	array_agg(car_owner ORDER BY registration_number),
+	array_agg(car_brand ORDER BY registration_number)
+	INTO plates, owners, brands FROM lpr.v_o2p
+	JOIN lpr.lpr_origin o USING(entity_id)
+	JOIN lpr.lpr_origin_type t USING(origin_type_id)
+	WHERE protocol='ISAPI' AND vendor IN ('Tyto')
+	AND is_enabled AND NOT is_deleted AND entity_id=origin_id;
+
+	--RAISE INFO 'plates=%', plates;
+	--RAISE INFO 'brands=%', brands;
+	--RAISE INFO 'owners=%', owners;
+	IF plates IS NULL THEN
+		RETURN NULL;
+	END IF;
+
+	RETURN lpr.plates_modify(origin_id, plates, brands, owners);
+END;
+$BODY$;
+ALTER FUNCTION lpr.origin_sync_full(integer) OWNER TO cnt;

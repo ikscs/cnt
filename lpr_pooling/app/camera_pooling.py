@@ -1,4 +1,5 @@
 import logging
+from datetime import date
 
 from db_wrapper import DB
 from sleeper import Sleeper
@@ -34,9 +35,9 @@ ORDER BY n.next_dt ASC
 LIMIT 1
 '''
 
-    sql_last_dt = f"SELECT get_last_dt(%s)"
+    sql_last_dt = "SELECT get_last_dt(%s)"
 
-    sql_next = f"INSERT INTO lpr_origin_next_pooling (entity_id, next_dt) VALUES (%s, NOW()+INTERVAL '%s SECOND') ON CONFLICT (entity_id) DO UPDATE SET next_dt=NOW()+INTERVAL '%s SECOND'"
+    sql_next = "INSERT INTO lpr_origin_next_pooling (entity_id, next_dt) VALUES (%s, NOW()+INTERVAL '%s SECOND') ON CONFLICT (entity_id) DO UPDATE SET next_dt=NOW()+INTERVAL '%s SECOND'"
 
     sql_seconds = f'''
 SELECT EXTRACT(EPOCH FROM COALESCE(n.next_dt, '{ZERO_DAY}') - NOW())::INT AS seconds_until_next
@@ -52,11 +53,12 @@ ORDER BY n.next_dt ASC
 LIMIT 1
 '''
 
-    sql_status = 'INSERT INTO lpr_entity_status (entity_id, success, dt, description) VALUES (%s, %s, COALESCE(%s, CURRENT_TIMESTAMP), %s) ON CONFLICT (entity_id) DO UPDATE SET success=%s, dt=COALESCE(%s, CURRENT_TIMESTAMP), description=%s'
+    sql_status = "INSERT INTO lpr_entity_status (entity_id, success, dt, description) VALUES (%s, %s, COALESCE(%s, CURRENT_TIMESTAMP), %s) ON CONFLICT (entity_id) DO UPDATE SET success=%s, dt=COALESCE(%s, CURRENT_TIMESTAMP), description=%s"
 
-    sql_write_events = 'INSERT INTO lpr_event (entity_id, uuid, ts_start, ts_end, group_id, registration_number, matched_number) VALUES (_ENTITY_ID_, %s, %s, %s, %s, %s, %s) ON CONFLICT (entity_id, uuid) DO NOTHING'
+    sql_write_events = "INSERT INTO lpr_event (entity_id, uuid, ts_start, ts_end, group_id, registration_number, matched_number) VALUES (_ENTITY_ID_, %s, %s, %s, %s, %s, %s) ON CONFLICT (entity_id, uuid) DO NOTHING"
 
-    sql_sync = f"SELECT origin_sync(%s)"
+    sql_sync = "SELECT origin_sync(%s)"
+    sql_sync_full = "SELECT origin_sync_full(%s)"
 
     while True:
         if sl.have_time():
@@ -73,6 +75,7 @@ LIMIT 1
             db.cursor.execute(sql_last_dt, [entity_id])
             res = db.cursor.fetchone()
             last_dt = res[0]
+            is_new_day = bool(last_dt.date() != date.today())
 
             try:
                 results, end_time = runners[vendor](credentials, entity_id, last_dt, params)
@@ -84,7 +87,7 @@ LIMIT 1
 
             if success:
                 db.cursor.executemany(sql_write_events.replace('_ENTITY_ID_', f'{entity_id}'), results)
-                db.cursor.execute(sql_sync, (entity_id,))
+                db.cursor.execute(sql_sync_full if is_new_day else sql_sync, (entity_id,))
 
             db.cursor.execute(sql_status, [entity_id, success, end_time, err, success, end_time, err])
 
