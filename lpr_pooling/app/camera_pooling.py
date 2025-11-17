@@ -75,7 +75,7 @@ LIMIT 1
             db.cursor.execute(sql_last_dt, [entity_id])
             res = db.cursor.fetchone()
             last_dt = res[0]
-            is_new_day = bool(last_dt.date() != date.today())
+            is_new_day = bool(last_dt.astimezone().date() != date.today())
 
             try:
                 results, end_time = runners[vendor](credentials, entity_id, last_dt, params)
