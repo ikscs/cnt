@@ -11,11 +11,13 @@ from camera_hik import Camera as Camera_hik
 from camera_dah import Camera as Camera_dah
 
 def is_script_running(script_name):
-    for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+    for proc in psutil.process_iter(['cmdline']):
         try:
-            if script_name in proc.info['cmdline']:
-               return True
+            if script_name in ' '.join(proc.info['cmdline']):
+               return proc.status() != psutil.STATUS_ZOMBIE
         except (psutil.NoSuchProcess, psutil.AccessDenied):
+            continue
+        except Exception as err:
             continue
     return False
 
@@ -23,7 +25,9 @@ app = FastAPI()
 
 @app.get("/", response_class=HTMLResponse)
 async def hello():
-    body = 'healthy' if is_script_running('camera_pooling.py') else ''
+    body = ''
+    if is_script_running('camera_pooling.py'):
+        body = 'healthy'
     body = f'''{body}<br><form action="set_osd.json" method="POST">
 <label for="point_id">point_id:</label><input type="text" id="point_id" name="point_id"><br>
 <input type='submit' value='submit'>
