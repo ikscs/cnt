@@ -9,6 +9,8 @@ import uuid
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
 def get_dict_value(src, *keys):
+    if not src:
+        return None
     result = src
     for key in keys:
         result = result.get(key)

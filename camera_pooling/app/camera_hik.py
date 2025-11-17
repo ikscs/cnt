@@ -4,6 +4,9 @@ import xmltodict
 import requests
 from requests.auth import HTTPDigestAuth
 
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 class Camera(Client):
     def __init__(self, credentials):
         self.ip = credentials['host']
@@ -29,26 +32,50 @@ class Camera(Client):
         return patched_url
 
     def get_snapshot(self):
-        response = self.Streaming.channels[103].picture(method='get', type='opaque_data')
+        try:
+            response = self.Streaming.channels[103].picture(method='get', type='opaque_data')
+            response.raise_for_status()
+        except Exception as err:
+            print(str(err))
         return response.content
 
+    def wrapped_request(self, method, url, data=None, is_xml=True):
+        if not url.startswith('http'):
+            url = f'{self.url}{url}'
+
+        headers = {'Content-Type': 'application/xml'} if data else {}
+        try:
+            response = requests.request(nethod, url, data=data, auth=HTTPDigestAuth(self.user, self.password), headers=headers, verify=False)
+            response.raise_for_status()
+        except Exception as err:
+            print(str(err))
+            return None
+
+        if not is_xml:
+            return response
+
+        try:
+            result = xmltodict.parse(response.text)
+        except Exception as err:
+            return None
+        return result
+
     def make_ISAPI_request(self, url, data):
-        response = requests.post(f'{self.url}{url}', data=data, auth=HTTPDigestAuth(self.user, self.password), headers={'Content-Type': 'application/xml'}, verify=False)
-        result = xmltodict.parse(response.text)
+        result = self.wrapped_request('POST', url, data)
         return result
 
     def make_ISAPI_PUT(self, url, data):
-        response = requests.put(f'{self.url}{url}', data=data, auth=HTTPDigestAuth(self.user, self.password), headers={'Content-Type': 'application/xml'}, verify=False)
-        result = xmltodict.parse(response.text)
+        result = self.wrapped_request('PUT', url, data)
         return result
 
-    def make_ISAPI_get(self, url):
-        response = requests.get(f'{self.url}{url}', auth=HTTPDigestAuth(self.user, self.password), verify=False)
-        result = xmltodict.parse(response.text)
+    def make_ISAPI_GET(self, url):
+        result = self.wrapped_request('GET', url)
         return result
 
     def get_media(self, url):
-        response = requests.request("GET", url, auth=HTTPDigestAuth(self.user, self.password), verify=False)
+        response = self.wrapped_request('GET', url, is_xml=False)
+        if not response:
+            return b''
         return response.content
 
     def parse_media_url(self, url):
