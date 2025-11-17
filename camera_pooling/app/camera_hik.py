@@ -45,7 +45,7 @@ class Camera(Client):
 
         headers = {'Content-Type': 'application/xml'} if data else {}
         try:
-            response = requests.request(nethod, url, data=data, auth=HTTPDigestAuth(self.user, self.password), headers=headers, verify=False)
+            response = requests.request(method, url, data=data, auth=HTTPDigestAuth(self.user, self.password), headers=headers, verify=False)
             response.raise_for_status()
         except Exception as err:
             print(str(err))
