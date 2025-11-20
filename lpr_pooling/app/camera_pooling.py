@@ -2,6 +2,8 @@ import logging
 from datetime import date
 
 from db_wrapper import DB
+from psycopg2.extras import Json
+
 from sleeper import Sleeper
 
 from pooling_tyto import tyto_runner
@@ -57,6 +59,8 @@ LIMIT 1
 
     sql_write_events = "INSERT INTO lpr_event (entity_id, uuid, ts_start, ts_end, group_id, registration_number, matched_number) VALUES (_ENTITY_ID_, %s, %s, %s, %s, %s, %s) ON CONFLICT (entity_id, uuid) DO NOTHING"
 
+    sql_write_events2 = "CALL lpr_upload_events(%s, %s)"
+
     sql_sync = "SELECT origin_sync(%s)"
     sql_sync_full = "SELECT origin_sync_full(%s)"
 
@@ -87,6 +91,9 @@ LIMIT 1
 
             if success:
                 db.cursor.executemany(sql_write_events.replace('_ENTITY_ID_', f'{entity_id}'), results)
+                results2 = [{'uuid': e[0], 'ts_start': e[1].isoformat(), 'ts_end': e[2].isoformat(), 'group_id': e[3], 'registration_number': e[4], 'matched_number': e[5]} for e in results]
+                db.cursor.execute(sql_write_events2, (entity_id, Json(results2)))
+
                 db.cursor.execute(sql_sync_full if is_new_day else sql_sync, (entity_id,))
 
             db.cursor.execute(sql_status, [entity_id, success, end_time, err, success, end_time, err])

@@ -253,3 +253,31 @@ BEGIN
 END;
 $BODY$;
 ALTER FUNCTION lpr.origin_sync_full(integer) OWNER TO cnt;
+
+
+-- PROCEDURE: lpr.lpr_upload_events(integer, jsonb)
+-- DROP PROCEDURE IF EXISTS lpr.lpr_upload_events(integer, jsonb);
+CREATE OR REPLACE PROCEDURE lpr.lpr_upload_events(IN origin_id integer, IN plate_events jsonb)
+LANGUAGE 'plpgsql'
+AS $BODY$
+DECLARE
+    p jsonb;
+BEGIN
+    FOR p IN SELECT jsonb_array_elements(plate_events)
+    LOOP
+        INSERT INTO lpr.lpr_event
+            (entity_id, uuid, ts_start, ts_end, group_id, registration_number, matched_number)
+        VALUES (
+            origin_id,
+            (p->>'uuid')::TEXT,
+            (p->>'ts_start')::timestamptz,
+            (p->>'ts_end')::timestamptz,
+            (p->>'group_id')::integer,
+            p->>'registration_number',
+            p->>'matched_number'
+        )
+        ON CONFLICT (entity_id, uuid) DO NOTHING;
+    END LOOP;
+END;
+$BODY$;
+ALTER PROCEDURE lpr.lpr_upload_events(integer, jsonb) OWNER TO cnt;
