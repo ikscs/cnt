@@ -260,24 +260,27 @@ ALTER FUNCTION lpr.origin_sync_full(integer) OWNER TO cnt;
 CREATE OR REPLACE PROCEDURE lpr.lpr_upload_events(IN origin_id integer, IN plate_events jsonb)
 LANGUAGE 'plpgsql'
 AS $BODY$
-DECLARE
-    p jsonb;
 BEGIN
-    FOR p IN SELECT jsonb_array_elements(plate_events)
-    LOOP
-        INSERT INTO lpr.lpr_event
-            (entity_id, uuid, ts_start, ts_end, group_id, registration_number, matched_number)
-        VALUES (
-            origin_id,
-            (p->>'uuid')::TEXT,
-            (p->>'ts_start')::timestamptz,
-            (p->>'ts_end')::timestamptz,
-            (p->>'group_id')::integer,
-            p->>'registration_number',
-            p->>'matched_number'
-        )
-        ON CONFLICT (entity_id, uuid) DO NOTHING;
-    END LOOP;
+    --RAISE NOTICE 'in %', plate_events;
+
+    CREATE TEMP TABLE tmp_table_otp1
+    ON COMMIT DROP
+    AS
+    SELECT *
+    FROM jsonb_to_recordset(plate_events) AS x(
+        ts_start TIMESTAMPTZ,
+	matched_number TEXT
+    );
+
+    UPDATE lpr.lpr_plate SET valid_to=CURRENT_TIMESTAMP
+    WHERE id IN (
+	SELECT p.id FROM tmp_table_otp1 t
+	JOIN lpr.v_origin_plate o ON o.camera_id=origin_id
+	JOIN lpr.lpr_plate p ON p.customer_id=o.customer_id AND p.registration_number=t.matched_number
+	WHERE 1=1
+	AND p.is_otp
+	AND CURRENT_TIMESTAMP BETWEEN p.valid_since and p.valid_to
+    );
 END;
 $BODY$;
 ALTER PROCEDURE lpr.lpr_upload_events(integer, jsonb) OWNER TO cnt;
