@@ -279,7 +279,7 @@ BEGIN
 	JOIN lpr.lpr_plate p ON p.customer_id=o.customer_id AND p.registration_number=t.matched_number
 	WHERE 1=1
 	AND p.is_otp
-	AND CURRENT_TIMESTAMP BETWEEN p.valid_since and p.valid_to
+	AND t.ts_start BETWEEN p.valid_since and p.valid_to
     );
 END;
 $BODY$;
