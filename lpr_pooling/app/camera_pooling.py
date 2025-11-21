@@ -91,7 +91,7 @@ LIMIT 1
 
             if success:
                 db.cursor.executemany(sql_write_events.replace('_ENTITY_ID_', f'{entity_id}'), results)
-                results2 = ['ts_start': e[1].isoformat(), 'matched_number': e[5]} for e in results if e[5]]
+                results2 = [{'ts_start': e[1].isoformat(), 'matched_number': e[5]} for e in results if e[5]]
                 db.cursor.execute(sql_write_events2, (entity_id, Json(results2)))
 
                 db.cursor.execute(sql_sync_full if is_new_day else sql_sync, (entity_id,))
