@@ -7,6 +7,8 @@ from sleeper import Sleeper
 from pooling_hik import hik_runner
 from pooling_dah import dah_runner
 
+from runner import Runner
+
 ORIGIN_PROTOCOL = 'ISAPI'
 ZERO_DAY = '2025-04-26 00:00:00+03'
 
@@ -76,8 +78,9 @@ LIMIT 1
             res = db.cursor.fetchone()
             last_dt = res[0]
 
+            runner = Runner(60)
             try:
-                count, end_time = runners[vendor](credentials, origin, id, last_dt, params)
+                count, end_time = runner.run(runners[vendor], credentials, origin, id, last_dt, params)
                 err = None
             except Exception as error:
                 count, end_time, err = 0, None, str(error)
