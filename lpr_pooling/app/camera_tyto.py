@@ -153,6 +153,19 @@ class Camera():
 
             return {'data': {'total': len(plates), 'add': result_add, 'remove': result_del}}
 
+        elif action == 'info':
+            result = self.make_action('get')
+            if not result:
+                return False
+            try:
+                plate_data_ids = [e for e in result['data']['PlatesId'] if e]
+            except Exception as err:
+                print(str(err))
+                return False
+
+            point = 'AI/AddedPlates/GetById'
+            data = {"MsgId": None, "PlatesId": plate_data_ids,}
+
         return self.request(point, data)
 
     def load_plate_events(self, dt_start, dt_end):
