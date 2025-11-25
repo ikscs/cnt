@@ -8,6 +8,8 @@ from sleeper import Sleeper
 
 from pooling_tyto import tyto_runner
 
+from runner import Runner
+
 ORIGIN_PROTOCOL = 'ISAPI'
 ZERO_DAY = '2025-10-29 00:00:00+02'
 
@@ -81,8 +83,9 @@ LIMIT 1
             last_dt = res[0]
             is_new_day = bool(last_dt.astimezone().date() != date.today())
 
+            runner = Runner(60)
             try:
-                results, end_time = runners[vendor](credentials, entity_id, last_dt, params)
+                results, end_time = runner.run(runners[vendor], credentials, entity_id, last_dt, params)
                 err = None
             except Exception as error:
                 end_time, err = None, str(error)
