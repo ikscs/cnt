@@ -57,7 +57,7 @@ ORDER BY n.next_dt ASC
 LIMIT 1
 '''
 
-    sql_status = "INSERT INTO lpr_entity_status (entity_id, success, dt, description) VALUES (%s, %s, COALESCE(%s, CURRENT_TIMESTAMP), %s) ON CONFLICT (entity_id) DO UPDATE SET success=%s, dt=COALESCE(%s, CURRENT_TIMESTAMP), description=%s"
+    sql_status = "INSERT INTO lpr_origin_status (origin_id, success, dt, description) VALUES (%s, %s, COALESCE(%s, CURRENT_TIMESTAMP), %s) ON CONFLICT (origin_id) DO UPDATE SET success=%s, dt=COALESCE(%s, CURRENT_TIMESTAMP), description=%s"
 
     sql_write_events = "INSERT INTO lpr_event (entity_id, uuid, ts_start, ts_end, group_id, registration_number, matched_number) VALUES (_ENTITY_ID_, %s, %s, %s, %s, %s, %s) ON CONFLICT (entity_id, uuid) DO NOTHING"
 

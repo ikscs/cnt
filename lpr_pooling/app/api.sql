@@ -73,7 +73,7 @@ ALTER FUNCTION lpr.get_snapshot(integer) OWNER TO cnt;
 
 -- FUNCTION: lpr.plates_action(integer, text, text[])
 -- DROP FUNCTION IF EXISTS lpr.plates_action(integer, text, text[]);
-CREATE OR REPLACE FUNCTION lpr.plates_action(origin_id integer,	action text, plates text[] DEFAULT NULL::text[])
+CREATE OR REPLACE FUNCTION lpr.plates_action(origin_id integer, action text, plates text[] DEFAULT NULL::text[])
     RETURNS jsonb
     LANGUAGE 'plpython3u'
     COST 100
@@ -86,6 +86,12 @@ script_dir = '/opt/docker/lpr_pooling/app'
 
 if script_dir not in sys.path:
     sys.path.append(script_dir)
+
+#from importlib import reload
+#if 'camera_tyto' in sys.modules:
+#    reload(sys.modules['camera_tyto'])
+#else:
+#    import camera_tyto
 
 from camera_tyto import Camera
 
@@ -103,6 +109,7 @@ if not camera.is_connected:
     return None
 
 result = camera.make_action(action, plates)
+
 if not result:
     return None
 

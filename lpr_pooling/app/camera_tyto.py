@@ -90,10 +90,16 @@ class Camera():
         return False
 
     def make_action(self, action, plates=[], brands=[], owners=[]):
-        points = {'get': 'AI/AddedPlates/GetId', 'add': 'AI/Plates/Add', 'remove': 'AI/Plates/Remove'}
-        point = points.get(action)
+        actions = ['check', 'get', 'info', 'add', 'modify', 'remove', 'sync']
+        if action not in actions:
+            return {'success': False, 'description': f'Valid actions are: {", ".join(actions)}'}
 
-        if action == 'get':
+        if action == 'check':
+#            return self.is_connected
+            point = 'Login/Heartbeat'
+            data = {}
+
+        elif action == 'get':
             point = 'AI/AddedPlates/GetId'
             plateinfo = []
             data = {"MsgId": None, "PlateInfo": plateinfo, "GrpId":[1],}
