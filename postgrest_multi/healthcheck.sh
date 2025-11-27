@@ -9,10 +9,17 @@ for api in "${INSTANCES[@]}"; do
   var_port=$(echo "${api}_PORT" | tr '[:lower:]' '[:upper:]')
   port="${!var_port}"
 
-  if ! curl -fs "http://localhost:${port}/" > /dev/null; then
-    echo "❌ $api on port $port is unhealthy"
+  status=$(curl -o /dev/null -s -w "%{http_code}" "http://localhost:${port}/")
+  if [ "$status" -eq 000 ]; then
+    echo "❌ $api on port $port unreachable"
     exit 1
   fi
+
+  if [ "$status" -ge 500 ]; then
+    echo "❌ $api on port $port server error: $status"
+    exit 1
+  fi
+
 done
 
 echo "✅ All PostgREST instances are healthy"
