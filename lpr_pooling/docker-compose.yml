@@ -2,8 +2,8 @@ services:
   lpr_pooling:
     container_name: lpr_pooling
     build: .
-#    ports:
-#      - "8089:8000"
+    ports:
+      - "127.0.0.1:8081:8000"
     volumes:
       - /var/screenshots:/var/screenshots
     env_file: ../.env

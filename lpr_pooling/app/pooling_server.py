@@ -31,3 +31,7 @@ async def hello():
     data += '</body></html>'
 
     return data
+
+@app.get('/test.json')
+async def test_json():
+    return JSONResponse(content={"value_str": "str1", "value_bool": True, "value_int": 77, "value_float": 1.23})
