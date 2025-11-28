@@ -78,7 +78,7 @@ ORDER BY m.id
         report += f'{status} <b>{metric_name}</b>: {dt:%Y-%m-%d %H:%M:%S}\n'
         if ('error' in rez[id]) or ('warning' in rez[id]):
             report += f'{value}\n'
-        report += '\n'
+#        report += '\n'
 
     total_set = set()
     for s in rez.values():
