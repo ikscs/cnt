@@ -31,6 +31,7 @@ class Camera():
         self.url = f"{self.proto}://{self.host}:{self.port}/API"
         self.timeout = float(timeout)
 
+        self.error_txt = 'Ok'
         self.req = self._check_session()
         self.is_connected = bool(self.req)
 
@@ -48,6 +49,7 @@ class Camera():
             return False
 
         if response.status_code != 200:
+            self.error_txt = f'Response code: {response.status_code}'
             return False
         response.raise_for_status()
 

@@ -1,9 +1,15 @@
 import psutil
-from fastapi import FastAPI, Form, File, UploadFile
-from typing import Optional
-import json
+#from fastapi import FastAPI, Form, File, UploadFile
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from typing import Optional, Any, Dict, List
+from pydantic import BaseModel
 
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
+
+from camera_tyto import Camera as Camera_tyto
+
+Camera = {'Tyto': Camera_tyto, }
 
 def is_script_running(script_name):
     for proc in psutil.process_iter(['cmdline']):
@@ -17,6 +23,13 @@ def is_script_running(script_name):
     return False
 
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_credentials=True,
+    allow_origins = ["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/", response_class=HTMLResponse)
 async def hello():
@@ -35,3 +48,73 @@ async def hello():
 @app.get('/test.json')
 async def test_json():
     return JSONResponse(content={"value_str": "str1", "value_bool": True, "value_int": 77, "value_float": 1.23})
+
+#@app.get('get_by_uuid', uuid):
+#def get_by_uuid
+
+class PayloadBase(BaseModel):
+    credentials: Dict[str, Any]
+    vendor: str
+
+class PayloadEventImages(PayloadBase):
+    uuid: str
+
+class PayloadAction(PayloadBase):
+    action: str
+    plates: Optional[List[str]] = []
+    brands: Optional[List[str]] = []
+    owners: Optional[List[str]] = []
+
+def get_camera(data):
+    if data.vendor not in Camera:
+        return False, JSONResponse(content={"result": False, "message": f"Vendor {data.vendor} not realized"})
+
+    camera = Camera[data.vendor](data.credentials)
+    if not camera.is_connected:
+        return False, JSONResponse(content={"result": False, "message": camera.error_txt})
+
+    return camera, None
+
+@app.post('/check_connection')
+async def check_connection(data: PayloadBase):
+    camera, response = get_camera(data)
+    if not camera:
+        return response
+
+    return JSONResponse(content={"result": camera.is_connected, "message": camera.error_txt})
+
+@app.post('/get_event_images')
+async def get_event_images(data: PayloadEventImages):
+    camera, response = get_camera(data)
+    if not camera:
+        return response
+
+    result = camera.get_by_uuid(data.uuid)
+    if not result:
+        return JSONResponse(content={"result": False})
+    else:
+        result["result"] = True
+        return JSONResponse(content=result)
+
+@app.post('/get_snapshot')
+async def get_snapshot(data: PayloadBase):
+    camera, response = get_camera(data)
+    if not camera:
+        return response
+
+    result = camera.get_snapshot()
+    if not result:
+        return JSONResponse(content={"result": False})
+    else:
+        return JSONResponse(content={"result": True, 'image': result})
+
+@app.post('/make_action')
+async def make_action(data: PayloadAction):
+    camera, response = get_camera(data)
+    if not camera:
+        return response
+
+    result = camera.make_action(data.action, data.plates, data.brands, data.owners)
+
+    print(result)
+    return JSONResponse(content=result)
