@@ -1,5 +1,4 @@
 import psutil
-#from fastapi import FastAPI, Form, File, UploadFile
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional, Any, Dict, List
@@ -8,6 +7,7 @@ from pydantic import BaseModel
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 
 from camera_tyto import Camera as Camera_tyto
+from adapter import adapt_action
 
 Camera = {'Tyto': Camera_tyto, }
 
@@ -44,13 +44,6 @@ async def hello():
     data += '</body></html>'
 
     return data
-
-@app.get('/test.json')
-async def test_json():
-    return JSONResponse(content={"value_str": "str1", "value_bool": True, "value_int": 77, "value_float": 1.23})
-
-#@app.get('get_by_uuid', uuid):
-#def get_by_uuid
 
 class PayloadBase(BaseModel):
     credentials: Dict[str, Any]
@@ -115,6 +108,6 @@ async def make_action(data: PayloadAction):
         return response
 
     result = camera.make_action(data.action, data.plates, data.brands, data.owners)
+    result = adapt_action(data.vendor, data.action, result)
 
-    print(result)
     return JSONResponse(content=result)
