@@ -40,6 +40,14 @@ RETURNS trigger
 LANGUAGE plpgsql
 AS $$
 BEGIN
+    IF TG_OP = 'UPDATE' THEN
+        NEW.updated_at := now();
+        RETURN NEW;
+    ELSIF TG_OP = 'INSERT' THEN
+        NEW.updated_at := now();
+        RETURN NEW;
+    END IF;
+
     REFRESH MATERIALIZED VIEW lpr.config;
     RETURN NULL;
 END;
