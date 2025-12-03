@@ -55,8 +55,8 @@ class PayloadEventImages(PayloadBase):
 class PayloadAction(PayloadBase):
     action: str
     plates: Optional[List[str]] = []
-    brands: Optional[List[str]] = []
-    owners: Optional[List[str]] = []
+    brands: Optional[List[str | None]] = []
+    owners: Optional[List[str | None]] = []
 
 def get_camera(data):
     if data.vendor not in Camera:

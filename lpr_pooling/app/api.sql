@@ -25,176 +25,35 @@ ALTER FUNCTION lpr.get_last_dt(integer) OWNER TO cnt;
 -- FUNCTION: lpr.get_snapshot(integer)
 -- DROP FUNCTION IF EXISTS lpr.get_snapshot(integer);
 CREATE OR REPLACE FUNCTION lpr.get_snapshot(origin_id integer)
-    RETURNS lpr."image/jpeg"
-    LANGUAGE 'plpython3u'
+    RETURNS jsonb
+    LANGUAGE 'plpgsql'
     COST 100
     VOLATILE PARALLEL UNSAFE
 AS $BODY$
-import sys
-import json
-import base64
-
-script_dir = '/opt/docker/lpr_pooling/app'
-
-if script_dir not in sys.path:
-    sys.path.append(script_dir)
-
-from camera_tyto import Camera
-
-sql = f"""SELECT credentials::JSONB FROM lpr.lpr_origin JOIN lpr.lpr_origin_type USING(origin_type_id)
-WHERE protocol='ISAPI' AND vendor IN ('Tyto')
-AND is_enabled AND NOT is_deleted AND entity_id={origin_id}"""
-
-query = plpy.execute(sql)
-if not query:
-    return None
-credentials = json.loads(query[0]['credentials'])
-
-camera = Camera(credentials)
-if not camera.is_connected:
-    return None
-
-blob = camera.get_snapshot()
-if not blob:
-    return None
-
-plpy.execute("""
-    SELECT set_config(
-        'response.headers',
-        '[{"Content-Type": "image/jpeg"}, {"Content-Disposition": "inline; filename=\\"snapshot.jpg\\""}]',
-        true
-    );
-""")
-
-return base64.b64decode(blob)
+DECLARE
+    result JSONB;
+BEGIN
+    SELECT lpr.api_camera(origin_id, 'get_snapshot') INTO result;
+    RETURN result;
+END;
 $BODY$;
 ALTER FUNCTION lpr.get_snapshot(integer) OWNER TO cnt;
-
-
--- FUNCTION: lpr.plates_action(integer, text, text[])
--- DROP FUNCTION IF EXISTS lpr.plates_action(integer, text, text[]);
-CREATE OR REPLACE FUNCTION lpr.plates_action(origin_id integer, action text, plates text[] DEFAULT NULL::text[])
-    RETURNS jsonb
-    LANGUAGE 'plpython3u'
-    COST 100
-    VOLATILE PARALLEL UNSAFE
-AS $BODY$
-import sys
-import json
-
-script_dir = '/opt/docker/lpr_pooling/app'
-
-if script_dir not in sys.path:
-    sys.path.append(script_dir)
-
-#from importlib import reload
-#if 'camera_tyto' in sys.modules:
-#    reload(sys.modules['camera_tyto'])
-#else:
-#    import camera_tyto
-
-from camera_tyto import Camera
-
-sql = f"""SELECT credentials::JSONB FROM lpr.lpr_origin JOIN lpr.lpr_origin_type USING(origin_type_id)
-WHERE protocol='ISAPI' AND vendor IN ('Tyto')
-AND is_enabled AND NOT is_deleted AND entity_id={origin_id}"""
-
-query = plpy.execute(sql)
-if not query:
-    return None
-credentials = json.loads(query[0]['credentials'])
-
-camera = Camera(credentials)
-if not camera.is_connected:
-    return None
-
-result = camera.make_action(action, plates)
-
-if not result:
-    return None
-
-return json.dumps(result, ensure_ascii=False)
-$BODY$;
-ALTER FUNCTION lpr.plates_action(integer, text, text[]) OWNER TO cnt;
-
-
--- FUNCTION: lpr.plates_modify(integer, text[], text[], text[])
--- DROP FUNCTION IF EXISTS lpr.plates_modify(integer, text[], text[], text[]);
-CREATE OR REPLACE FUNCTION lpr.plates_modify(origin_id integer, plates text[], brands text[], owners text[])
-    RETURNS jsonb
-    LANGUAGE 'plpython3u'
-    COST 100
-    VOLATILE PARALLEL UNSAFE
-AS $BODY$
-import sys
-import json
-
-script_dir = '/opt/docker/lpr_pooling/app'
-
-if script_dir not in sys.path:
-    sys.path.append(script_dir)
-
-from camera_tyto import Camera
-
-sql = f"""SELECT credentials::JSONB FROM lpr.lpr_origin JOIN lpr.lpr_origin_type USING(origin_type_id)
-WHERE protocol='ISAPI' AND vendor IN ('Tyto')
-AND is_enabled AND NOT is_deleted AND entity_id={origin_id}"""
-
-query = plpy.execute(sql)
-if not query:
-    return None
-credentials = json.loads(query[0]['credentials'])
-
-camera = Camera(credentials)
-if not camera.is_connected:
-    return None
-
-result = camera.make_action('modify', plates, brands, owners)
-if not result:
-    return None
-
-return json.dumps(result, ensure_ascii=False)
-$BODY$;
-ALTER FUNCTION lpr.plates_modify(integer, text[], text[], text[]) OWNER TO cnt;
 
 
 -- FUNCTION: lpr.get_event_images(integer, text)
 -- DROP FUNCTION IF EXISTS lpr.get_event_images(integer, text);
 CREATE OR REPLACE FUNCTION lpr.get_event_images(origin_id integer, uuid text)
     RETURNS jsonb
-    LANGUAGE 'plpython3u'
+    LANGUAGE 'plpgsql'
     COST 100
     VOLATILE PARALLEL UNSAFE
 AS $BODY$
-import sys
-import json
-
-script_dir = '/opt/docker/lpr_pooling/app'
-
-if script_dir not in sys.path:
-    sys.path.append(script_dir)
-
-from camera_tyto import Camera
-
-sql = f"""SELECT credentials::JSONB FROM lpr.lpr_origin JOIN lpr.lpr_origin_type USING(origin_type_id)
-WHERE protocol='ISAPI' AND vendor IN ('Tyto')
-AND is_enabled AND NOT is_deleted AND entity_id={origin_id}"""
-
-query = plpy.execute(sql)
-if not query:
-    return None
-credentials = json.loads(query[0]['credentials'])
-	
-camera = Camera(credentials)
-if not camera.is_connected:
-    return None
-
-result = camera.get_by_uuid(uuid)
-
-if not result:
-    return None
-
-return json.dumps(result, ensure_ascii=False)
+DECLARE
+    result JSONB;
+BEGIN
+    SELECT lpr.api_camera(origin_id, 'get_event_images', jsonb_build_object('uuid', uuid)) INTO result;
+    RETURN result;
+END;
 $BODY$;
 ALTER FUNCTION lpr.get_event_images(integer, text) OWNER TO cnt;
 
@@ -221,7 +80,9 @@ BEGIN
 		RETURN NULL;
 	END IF;
 
-	RETURN lpr.plates_action(origin_id, 'sync', plates);
+	--RETURN lpr.plates_action(origin_id, 'sync', plates);
+	RETURN lpr.api_camera(origin_id, 'make_action', jsonb_build_object('action', 'sync', 'plates', plates));
+
 END;
 $BODY$;
 ALTER FUNCTION lpr.origin_sync(integer) OWNER TO cnt;
