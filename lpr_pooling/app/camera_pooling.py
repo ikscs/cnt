@@ -7,10 +7,11 @@ from psycopg2.extras import Json
 from sleeper import Sleeper
 
 from pooling_tyto import tyto_runner
+from pooling_demo import Demo_runner
 
 from runner import Runner
 
-ORIGIN_PROTOCOL = 'ISAPI'
+ORIGIN_PROTOCOLS = "'ISAPI', 'DEMO'"
 ZERO_DAY = '2025-10-29 00:00:00+02'
 
 runners = {'Tyto': tyto_runner}
@@ -20,6 +21,9 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 def main():
     logging.info("Start service")
     db = DB()
+    demo = Demo_runner(db)
+    runners['Demo'] = demo.run
+
     sl = Sleeper()
 
     sql_jobs = f'''
@@ -30,7 +34,7 @@ LEFT JOIN lpr_entity e using(entity_id)
 LEFT JOIN lpr_origin_type t USING(origin_type_id)
 LEFT JOIN billing.balance b using(customer_id)
 WHERE
-t.protocol = '{ORIGIN_PROTOCOL}'
+t.protocol IN ({ORIGIN_PROTOCOLS})
 AND o.is_enabled
 -- AND CURRENT_TIME between p.start_time AND p.end_time
 AND NOW() <= b.end_date
@@ -49,7 +53,7 @@ FROM lpr_origin o
 LEFT JOIN lpr_origin_next_pooling n using(entity_id)
 LEFT JOIN lpr_origin_type t USING(origin_type_id)
 WHERE
-t.protocol = '{ORIGIN_PROTOCOL}'
+t.protocol IN ({ORIGIN_PROTOCOLS})
 AND o.is_enabled
 --AND CURRENT_TIME between p.start_time AND p.end_time
 AND NOW() < COALESCE(n.next_dt, '2025-10-29 00:00:00+02')
