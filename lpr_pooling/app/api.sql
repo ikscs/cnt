@@ -194,8 +194,16 @@ IF entry = 'get_event_images' THEN
 	ORDER BY RANDOM() LIMIT 1;
 	
 	SELECT encode(image, 'base64') INTO image_background FROM lpr.lpr_demo_camera
-	WHERE lpr.lpr_demo_camera.origin_id=origin_id_inp AND registration_number IS NULL
-	ORDER BY RANDOM() LIMIT 1;
+	JOIN lpr.lpr_event USING(registration_number)
+	WHERE lpr.lpr_demo_camera.origin_id=origin_id_inp
+	AND uuid = (data->>'uuid')::TEXT
+	LIMIT 1;
+
+	IF image_background IS NULL THEN
+		SELECT encode(image, 'base64') INTO image_background FROM lpr.lpr_demo_camera
+		WHERE lpr.lpr_demo_camera.origin_id=origin_id_inp AND registration_number IS NULL
+		ORDER BY RANDOM() LIMIT 1;
+	END IF;
 
 	result_out = jsonb_build_object(
 		'result', (image_plate IS NOT NULL) AND (image_background IS NOT NULL),
