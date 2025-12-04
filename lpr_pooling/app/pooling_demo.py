@@ -33,7 +33,7 @@ class Demo_runner:
         return results, end_time
 
     def get_number_from_base(self):
-        sql = 'SELECT registration_number FROM lpr_demo_camera WHERE registration_number IS NOT NULL AND origin_id=%s ORDER BY RANDOM() LIMIT 1;'
+        sql = "SELECT registration_number FROM lpr_demo_camera WHERE origin_id=%s AND registration_number IS NOT NULL AND registration_number NOT IN ('snapshot', 'plate') ORDER BY RANDOM() LIMIT 1;"
         self.db.cursor.execute(sql, [self.origin_id])
         result = self.db.cursor.fetchone()
         if not result:
