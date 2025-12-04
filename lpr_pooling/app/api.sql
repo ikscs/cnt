@@ -152,3 +152,102 @@ BEGIN
 END;
 $BODY$;
 ALTER PROCEDURE lpr.lpr_upload_events(integer, jsonb) OWNER TO cnt;
+
+
+-- FUNCTION: lpr.api_camera_demo(integer, text, jsonb)
+-- DROP FUNCTION IF EXISTS lpr.api_camera_demo(integer, text, jsonb);
+CREATE OR REPLACE FUNCTION lpr.api_camera_demo(origin_id integer, entry text, data jsonb DEFAULT NULL::jsonb)
+    RETURNS jsonb
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE PARALLEL UNSAFE
+AS $BODY$
+DECLARE
+	origin_id_inp INTEGER;
+	image_plate TEXT;
+	image_background TEXT;
+	result_out JSONB;
+	info_out JSONB;
+	plates TEXT[];
+BEGIN
+IF entry = 'check_connection' THEN
+	RETURN '{"result": true, "message": "Demo camera always online"}';
+END IF;
+
+origin_id_inp = origin_id;
+
+IF entry = 'get_snapshot' THEN
+	SELECT encode(image, 'base64') INTO image_background FROM lpr.lpr_demo_camera
+	WHERE lpr.lpr_demo_camera.origin_id=origin_id_inp AND registration_number = 'snapshot'
+	ORDER BY RANDOM() LIMIT 1;
+
+	result_out = jsonb_build_object(
+		'result', (image_background IS NOT NULL),
+		'image', image_background
+	);
+	RETURN result_out;
+END IF;
+
+IF entry = 'get_event_images' THEN
+	SELECT encode(image, 'base64') INTO image_plate FROM lpr.lpr_demo_camera
+	WHERE lpr.lpr_demo_camera.origin_id=origin_id_inp AND registration_number = 'plate'
+	ORDER BY RANDOM() LIMIT 1;
+	
+	SELECT encode(image, 'base64') INTO image_background FROM lpr.lpr_demo_camera
+	WHERE lpr.lpr_demo_camera.origin_id=origin_id_inp AND registration_number IS NULL
+	ORDER BY RANDOM() LIMIT 1;
+
+	result_out = jsonb_build_object(
+		'result', (image_plate IS NOT NULL) AND (image_background IS NOT NULL),
+		'background', image_background,
+		'object', image_plate
+	);
+	RETURN result_out;
+END IF;
+
+IF entry = 'make_action' THEN
+	IF (data->>'action')::TEXT NOT IN ('check', 'get', 'info') THEN
+		RETURN '{"result": false, "message": "Action not realized"}';
+	END IF;
+
+	IF (data->>'action')::TEXT = 'check' THEN
+		RETURN '{"result": true, "message": "Demo camera always online"}';
+	END IF;
+
+	IF (data->>'action')::TEXT = 'get' THEN
+		SELECT array_agg(registration_number) INTO plates
+		FROM lpr.lpr_demo_camera
+		WHERE lpr.lpr_demo_camera.origin_id=origin_id_inp AND registration_number IS NOT NULL
+		AND registration_number NOT IN ('plate', 'snapshot');
+
+		result_out = jsonb_build_object(
+			'result', true,
+			'plates', plates
+		);
+		RETURN result_out;
+	END IF;
+
+	IF (data->>'action')::TEXT = 'info' THEN
+		SELECT jsonb_agg(
+    	jsonb_build_object(
+        	'id', registration_number,
+        	'owner', car_owner,
+        	'brand', car_brand
+    	)
+		) INTO info_out FROM lpr.lpr_demo_camera
+		WHERE lpr.lpr_demo_camera.origin_id=origin_id_inp AND registration_number IS NOT NULL
+		AND registration_number NOT IN ('plate', 'snapshot');
+
+		result_out = jsonb_build_object(
+			'result', (info_out IS NOT NULL),
+			'info', info_out
+		);
+		RETURN result_out;
+	END IF;
+END IF;
+
+RETURN '{"result": false, "message": "Something goes wrong"}';
+END;
+$BODY$;
+
+ALTER FUNCTION lpr.api_camera_demo(integer, text, jsonb) OWNER TO cnt;
