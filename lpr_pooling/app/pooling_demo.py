@@ -30,6 +30,7 @@ class Demo_runner:
 
             results.append([uuid.uuid4().hex, start_time, end_time, group, number, match_number])
 
+        end_time = datetime.now().astimezone(timezone.utc)
         return results, end_time
 
     def get_number_from_base(self):

@@ -171,7 +171,7 @@ DECLARE
 	plates TEXT[];
 BEGIN
 IF entry = 'check_connection' THEN
-	RETURN '{"result": true, "message": "Demo camera always online"}';
+	RETURN '{"result": true, "message": "Ok"}';
 END IF;
 
 origin_id_inp = origin_id;
@@ -219,7 +219,7 @@ IF entry = 'make_action' THEN
 	END IF;
 
 	IF (data->>'action')::TEXT = 'check' THEN
-		RETURN '{"result": true, "message": "Demo camera always online"}';
+		RETURN '{"result": true, "message": "Ok"}';
 	END IF;
 
 	IF (data->>'action')::TEXT = 'get' THEN
