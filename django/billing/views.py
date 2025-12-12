@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.http import HttpResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
@@ -16,18 +15,49 @@ from pcnt.base import PCNTBaseViewSet, PCNTBaseAPIView, PCNTBaseReadOnlyViewSet
 
 from liqpay import LiqPay
 
-liqpay_params = {
-    'action': 'pay',
-    'amount': '0.01',
-    'currency': 'USD',
-    'description': '',
-    'order_id': 0,
-    'version': '3',
-    'sandbox': settings.LIQPAY['SANDBOX'],
-    'server_url': settings.LIQPAY['CALLBACK'],
-}
-if settings.LIQPAY.get('RESULT_URL'):
-    liqpay_params['result_url'] = settings.LIQPAY['RESULT_URL']
+import os
+import environ
+
+class LP():
+    app_ids = dict()
+    cfg = dict()
+    params = dict()
+    params_default = {
+        'action': 'pay',
+        'amount': '0.01',
+        'currency': 'USD',
+        'description': '',
+        'order_id': 0,
+        'version': '3',
+    }
+
+    def __init__(self):
+        ids = os.environ.get('LIQPAY_APP_IDS', '').split(',')
+        for n, e in enumerate(ids, 1):
+            self.app_ids[n] = e
+            self.params[e] = self.params_default.copy()
+            self.cfg[e] = dict()
+
+        for k, v in os.environ.items():
+            for n, app_id in self.app_ids.items():
+                key = f'LIQPAY{n}_'
+                if k.startswith(key):
+                    k = k.split('_', 1)[-1]
+                    self.cfg[app_id][k] = v
+
+        for app_id in self.app_ids.values():
+            self.params[app_id]['sandbox'] = self.cfg[app_id]['SANDBOX']
+            self.params[app_id]['server_url'] = self.cfg[app_id]['CALLBACK']
+            url = self.cfg[app_id].get('RESULT_URL')
+            if url:
+                self.params[app_id]['result_url'] = url
+
+    def mk_liqpay(self, app_id):
+        liqpay = LiqPay(self.cfg[app_id]['PUBLIC_KEY'], self.cfg[app_id]['PRIVATE_KEY'])
+        return liqpay
+
+environ.Env.read_env()
+lp = LP()
 
 ORDER_TABLE = 'billing.orders'
 
@@ -48,7 +78,7 @@ sandbox_token	Успішна оплата по токену
         rows = []
         field_names = []
         with connections['pcnt'].cursor() as cursor:
-            query = f'SELECT order_id, amount, currency, description, data FROM {ORDER_TABLE} ORDER BY order_id;'
+            query = f'SELECT order_id, amount, currency, description, data, app_id FROM {ORDER_TABLE} ORDER BY order_id;'
             cursor.execute(query)
             field_names = [e[0] for e in cursor.description]
             for row in cursor.fetchall():
@@ -79,12 +109,24 @@ sandbox_token	Успішна оплата по токену
 @method_decorator(csrf_exempt, name='dispatch')
 class PayCallbackView(View):
     def post(self, request, *args, **kwargs):
-        liqpay = LiqPay(settings.LIQPAY['PUBLIC_KEY'], settings.LIQPAY['PRIVATE_KEY'])
+        app_id = request.GET.get('app_id')
+        if not app_id:
+            return HttpResponse()
+        if not app_id in lp.app_ids.values():
+            return HttpResponse()
+
         data = request.POST.get('data')
         signature = request.POST.get('signature')
-        sign = liqpay.str_to_sign(settings.LIQPAY['PRIVATE_KEY'] + data + settings.LIQPAY['PRIVATE_KEY'])
-        response = liqpay.decode_data_from_str(data)
+        if not data or not signature:
+            return HttpResponse()
+
+        liqpay = lp.mk_liqpay(app_id)
+        sign = liqpay.str_to_sign(lp.cfg[app_id]['PRIVATE_KEY'] + data + lp.cfg[app_id]['PRIVATE_KEY'])
         if sign == signature:
+            try:
+                response = liqpay.decode_data_from_str(data)
+            except Exception as err:
+                response = {}
             with connections['pcnt'].cursor() as cursor:
                 query = f'UPDATE {ORDER_TABLE} SET data=%s WHERE order_id=%s'
                 cursor.execute(query, [json.dumps(response), response.get('order_id')])
@@ -101,20 +143,24 @@ class PaymentLiqpayView(APIView):
 
         field_names = []
         with connections['pcnt'].cursor() as cursor:
-            query = f'SELECT amount, currency, description, periodicity FROM {ORDER_TABLE} WHERE order_id=%s;'
+            query = f'SELECT amount, currency, description, periodicity, app_id FROM {ORDER_TABLE} WHERE order_id=%s;'
             cursor.execute(query, [order_id,])
 
             row = cursor.fetchone()
             if not row:
                 return Response({'error': f'Not found {order_id}'}, status=status.HTTP_400_BAD_REQUEST)
 
+            app_id = row[4]
+            if not app_id in lp.app_ids.values():
+                return Response({'error': f'{app_id} has no liqpay params'}, status=status.HTTP_400_BAD_REQUEST)
+
             amount = row[0]
             currency = row[1]
             description = row[2]
             periodicity = row[3]
 
-        liqpay = LiqPay(settings.LIQPAY['PUBLIC_KEY'], settings.LIQPAY['PRIVATE_KEY'])
-        params = liqpay_params
+        liqpay = lp.mk_liqpay(app_id)
+        params = lp.params[app_id]
         params['amount'] = str(amount)
         params['currency'] = currency
         params['description'] = description
@@ -148,7 +194,15 @@ class PaymentStatusView(APIView):
         if not order_id:
             return Response({'error': 'Missing order_id'}, status=status.HTTP_400_BAD_REQUEST)
 
-        liqpay = LiqPay(settings.LIQPAY['PUBLIC_KEY'], settings.LIQPAY['PRIVATE_KEY'])
+        with connections['pcnt'].cursor() as cursor:
+            query = f'SELECT app_id FROM {ORDER_TABLE} WHERE order_id=%s'
+            cursor.execute(query, [order_id,])
+            row = cursor.fetchone()
+            if not row:
+                return Response({'error': f'Not found {order_id}'}, status=status.HTTP_400_BAD_REQUEST)
+            app_id = row[0]
+
+        liqpay = lp.mk_liqpay(app_id)
 
         try:
             res = liqpay.api('request', {
