@@ -33,7 +33,9 @@ SELECT face_uuid, i.ts, p.time_period FROM face_data d
 LEFT JOIN incoming i using(file_uuid)
 LEFT JOIN origin o using(origin)
 LEFT JOIN point p using(point_id)
-WHERE demography IS NULL ORDER BY ts ASC LIMIT 1
+WHERE demography IS NULL
+ORDER BY q_number DESC, ts ASC
+LIMIT 1
 )
 UPDATE face_data d SET demography='{}', time_slot=get_time_slot(r.time_period, r.ts)
 FROM one_row AS r

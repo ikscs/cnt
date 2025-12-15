@@ -33,8 +33,10 @@ class Processor(metaclass=SingletonMeta):
     sql_target = '''
 WITH one_row AS (
 SELECT file_uuid FROM incoming
+LEFT JOIN origin ON origin_id=id
 WHERE faces_cnt IS NULL
-ORDER BY ts ASC LIMIT 1
+ORDER BY q_number DESC, ts ASC
+LIMIT 1
 )
 UPDATE incoming SET faces_cnt=-1
 WHERE file_uuid IN (SELECT file_uuid FROM one_row)
