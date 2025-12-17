@@ -82,6 +82,10 @@ class Service_exchange():
             logging.error(str(err))
             return None
 
+    def reaction(self, data):
+#        print(type(data), data)
+        print('Reaction on:', len(data))
+
 if __name__ == "__main__":
     se = Service_exchange()
 
