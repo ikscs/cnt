@@ -60,6 +60,7 @@ environ.Env.read_env()
 lp = LP()
 
 ORDER_TABLE = 'billing.orders'
+PAYMENTS_TABLE = 'billing.payments'
 
 class PayView(View):
     header = '''<html><body><pre>
@@ -130,8 +131,18 @@ class PayCallbackView(View):
             with connections['pcnt'].cursor() as cursor:
                 query = f'UPDATE {ORDER_TABLE} SET data=%s WHERE order_id=%s'
                 cursor.execute(query, [json.dumps(response), response.get('order_id')])
+
                 query = f'INSERT INTO billing.callback_log (data) VALUES (%s)'
                 cursor.execute(query, [json.dumps(response),])
+
+                query = f'''INSERT INTO {PAYMENTS_TABLE} (order_id, currency, amount, dt, type, app_id, customer_id)
+SELECT order_id, data->>'currency', CAST(data->>'amount' AS NUMERIC), to_timestamp((data->>'end_date')::double precision / 1000.0), type, app_id, customer_id
+FROM {ORDER_TABLE} o
+ON COMFLICT (order_id) DO UPDATE SET
+currency=data->>'currency', amount=CAST(data->>'amount' AS NUMERIC), dt=to_timestamp((data->>'end_date')::double precision / 1000.0), type=o.type, app_id=o.app_id, customer_id=o.customer_id
+WHERE order_id=%s AMD data->>'status' IN ('success', 'subscribed', 'sandbox');'''
+                cursor.execute(query, [response.get('order_id'),])
+
         return HttpResponse()
 
 class PaymentLiqpayView(APIView):
@@ -216,6 +227,14 @@ class PaymentStatusView(APIView):
         with connections['pcnt'].cursor() as cursor:
             query = f'UPDATE {ORDER_TABLE} SET data=%s WHERE order_id=%s'
             cursor.execute(query, [json.dumps(res), order_id])
+
+            query = f'''INSERT INTO {PAYMENTS_TABLE} (order_id, currency, amount, dt, type, app_id, customer_id)
+SELECT order_id, data->>'currency', CAST(data->>'amount' AS NUMERIC), to_timestamp((data->>'end_date')::double precision / 1000.0), type, app_id, customer_id
+FROM {ORDER_TABLE} o
+ON COMFLICT (order_id) DO UPDATE SET
+currency=data->>'currency', amount=CAST(data->>'amount' AS NUMERIC), dt=to_timestamp((data->>'end_date')::double precision / 1000.0), type=o.type, app_id=o.app_id, customer_id=o.customer_id
+WHERE order_id=%s AMD data->>'status' IN ('success', 'subscribed', 'sandbox');'''
+            cursor.execute(query, [order_id,])
 
         return Response(res, status=status.HTTP_200_OK)
 
