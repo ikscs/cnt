@@ -62,6 +62,20 @@ lp = LP()
 ORDER_TABLE = 'billing.orders'
 PAYMENTS_TABLE = 'billing.payments'
 
+PAYMENTS_QUERY = f'''INSERT INTO {PAYMENTS_TABLE} (order_id, currency, amount, dt, type, app_id, customer_id)
+SELECT  o.order_id, o.data->>'currency', (o.data->>'amount')::numeric,
+to_timestamp((o.data->>'end_date')::double precision / 1000.0),
+o.type, o.app_id, o.customer_id
+FROM {ORDER_TABLE} o
+WHERE o.order_id = %s AND o.data->>'status' IN ('success', 'subscribed', 'sandbox')
+ON CONFLICT (order_id) DO UPDATE SET
+currency = EXCLUDED.currency,
+amount = EXCLUDED.amount,
+dt = EXCLUDED.dt,
+type = EXCLUDED.type,
+app_id = EXCLUDED.app_id,
+customer_id  = EXCLUDED.customer_id;'''
+
 class PayView(View):
     header = '''<html><body><pre>
 Картки для тестування
@@ -135,13 +149,7 @@ class PayCallbackView(View):
                 query = f'INSERT INTO billing.callback_log (data) VALUES (%s)'
                 cursor.execute(query, [json.dumps(response),])
 
-                query = f'''INSERT INTO {PAYMENTS_TABLE} (order_id, currency, amount, dt, type, app_id, customer_id)
-SELECT order_id, data->>'currency', CAST(data->>'amount' AS NUMERIC), to_timestamp((data->>'end_date')::double precision / 1000.0), type, app_id, customer_id
-FROM {ORDER_TABLE} o
-ON COMFLICT (order_id) DO UPDATE SET
-currency=data->>'currency', amount=CAST(data->>'amount' AS NUMERIC), dt=to_timestamp((data->>'end_date')::double precision / 1000.0), type=o.type, app_id=o.app_id, customer_id=o.customer_id
-WHERE order_id=%s AMD data->>'status' IN ('success', 'subscribed', 'sandbox');'''
-                cursor.execute(query, [response.get('order_id'),])
+                cursor.execute(PAYMENTS_QUERY, [response.get('order_id'),])
 
         return HttpResponse()
 
@@ -228,13 +236,7 @@ class PaymentStatusView(APIView):
             query = f'UPDATE {ORDER_TABLE} SET data=%s WHERE order_id=%s'
             cursor.execute(query, [json.dumps(res), order_id])
 
-            query = f'''INSERT INTO {PAYMENTS_TABLE} (order_id, currency, amount, dt, type, app_id, customer_id)
-SELECT order_id, data->>'currency', CAST(data->>'amount' AS NUMERIC), to_timestamp((data->>'end_date')::double precision / 1000.0), type, app_id, customer_id
-FROM {ORDER_TABLE} o
-ON COMFLICT (order_id) DO UPDATE SET
-currency=data->>'currency', amount=CAST(data->>'amount' AS NUMERIC), dt=to_timestamp((data->>'end_date')::double precision / 1000.0), type=o.type, app_id=o.app_id, customer_id=o.customer_id
-WHERE order_id=%s AMD data->>'status' IN ('success', 'subscribed', 'sandbox');'''
-            cursor.execute(query, [order_id,])
+            cursor.execute(PAYMENTS_QUERY, [order_id,])
 
         return Response(res, status=status.HTTP_200_OK)
 
