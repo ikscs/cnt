@@ -10,7 +10,7 @@ from img_report import mk_img_report
 
 app = FastAPI()
 
-@app.get("/", response_class=HTMLResponse)
+@app.get('/', response_class=HTMLResponse)
 async def hello():
     body = 'healthy' if True else ''
     data = '<html><head></head>'
@@ -20,8 +20,8 @@ async def hello():
     data += '</body></html>'
     return data
 
-@app.get("/print_order')
-def get_pdf_file(report_id_inp: int):
+@app.get('/print_order')
+def get_pdf_file(order_id: int):
     pdf_path = "test.pdf"
     return FileResponse(
         path=pdf_path,
