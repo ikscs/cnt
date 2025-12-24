@@ -1,6 +1,7 @@
 import json
 from fastapi import FastAPI, Form
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse, FileResponse
+from fastapi.responses import Response
 from db_wrapper import DB
 from sender import Sender, get_email_cfg
 from datetime import date
@@ -23,11 +24,20 @@ async def hello():
 @app.get('/print_order')
 def get_pdf_file(order_id: int):
     pdf_path = "test.pdf"
-    return FileResponse(
-        path=pdf_path,
-        media_type="application/pdf",
-        filename="invoice.pdf"
-    )
+
+    #return FileResponse(
+    #    path=pdf_path,
+    #    media_type="application/pdf",
+    #    filename="invoice.pdf"
+    #)
+
+    with open(pdf_path, 'rb') as f:
+        content_bytes = f.read()
+
+    headers = {
+        'Content-Disposition': 'attachment; filename="invoice.pdf"'
+    }
+    return Response(content=content_bytes, media_type="application/pdf", headers=headers)
 
 @app.post('/send_mail.json')
 async def send_mail(
