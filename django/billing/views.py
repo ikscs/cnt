@@ -62,13 +62,15 @@ lp = LP()
 ORDER_TABLE = 'billing.orders'
 PAYMENTS_TABLE = 'billing.payments'
 
-PAYMENTS_QUERY = f'''INSERT INTO {PAYMENTS_TABLE} (order_id, currency, amount, dt, type, app_id, customer_id)
-SELECT  o.order_id, o.data->>'currency', (o.data->>'amount')::numeric,
+PAYMENTS_QUERY = f'''INSERT INTO {PAYMENTS_TABLE} (order_id, bank_order_id, currency, amount, dt, type, app_id, customer_id)
+SELECT  o.order_id, COALESCE(o.data->>'liqpay_order_id', ''), o.data->>'currency', (o.data->>'amount')::numeric,
 to_timestamp((o.data->>'end_date')::double precision / 1000.0),
 o.type, o.app_id, o.customer_id
 FROM {ORDER_TABLE} o
-WHERE o.order_id = %s AND o.data->>'status' IN ('success', 'subscribed', 'sandbox')
-ON CONFLICT (order_id) DO UPDATE SET
+WHERE o.order_id = %s
+AND o.data->>'status' IN ('success', 'subscribed', 'sandbox')
+AND o.data->>'action' IN ('pay', 'subscribe', 'regular')
+ON CONFLICT (order_id, bank_order_id) DO UPDATE SET
 currency = EXCLUDED.currency,
 amount = EXCLUDED.amount,
 dt = EXCLUDED.dt,
