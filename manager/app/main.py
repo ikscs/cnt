@@ -9,6 +9,8 @@ from datetime import date
 from xlsx_report import mk_xlsx_report
 from img_report import mk_img_report
 
+from print_order import print_order
+
 app = FastAPI()
 
 @app.get('/', response_class=HTMLResponse)
@@ -23,7 +25,7 @@ async def hello():
 
 @app.get('/print_order')
 def get_pdf_file(order_id: int):
-    pdf_path = "test.pdf"
+    #pdf_path = "test.pdf"
 
     #return FileResponse(
     #    path=pdf_path,
@@ -31,8 +33,15 @@ def get_pdf_file(order_id: int):
     #    filename="invoice.pdf"
     #)
 
-    with open(pdf_path, 'rb') as f:
-        content_bytes = f.read()
+    #with open(pdf_path, 'rb') as f:
+    #    content_bytes = f.read()
+
+    db = DB()
+    db.open()
+
+    content_bytes = print_order(order_id, db.cursor)
+
+    db.close()
 
     headers = {
         'Content-Disposition': 'attachment; filename="invoice.pdf"'

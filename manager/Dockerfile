@@ -4,6 +4,9 @@ RUN apt-get update && apt-get install -y \
     cron \
     curl \
     mc \
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
+    libpangoft2-1.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

@@ -9,3 +9,5 @@ pandas
 openpyxl
 matplotlib
 pyTelegramBotAPI
+jinja2
+weasyprint
