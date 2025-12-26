@@ -19,7 +19,7 @@ ORDER BY time_slot ASC
 LIMIT 1;
 '''
     sql2 = f"CALL update_neighbors(%s, %s, %s, %s, %s);"
-    sql3 = "CREATE TABLE IF NOT EXISTS person_match (ts TIMESTAMPTZ, face_uuid TEXT, parent_uuid TEXT, group_id INTEGER, point_id INTEGER);"
+    sql3 = "CREATE TEMPORARY TABLE person_match (ts TIMESTAMPTZ, face_uuid TEXT, parent_uuid TEXT, group_id INTEGER, point_id INTEGER);"
     sql4 = """SELECT point_id, t.name AS reaction_name, m.face_uuid, m.parent_uuid, ts, p.name, common_param, param
 FROM person_match m
 JOIN person_group_reaction r USING(group_id)
@@ -54,7 +54,7 @@ ORDER BY point_id, reaction_id;"""
             res = self.db.cursor.fetchall()
             if res:
                 self.se.reaction(res)
-                #self.db.cursor.execute(self.sql5)
+                self.db.cursor.execute(self.sql5)
 
             self.db.conn.commit()
 
