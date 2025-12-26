@@ -15,6 +15,7 @@ class Service_exchange():
         self.OSD_URL = 'http://camera_pooling:8000/set_osd.json'
         self.KV_DB_URL = 'http://kv_db:5000'
         self.FACE_CONFIDENCE_URL = 'http://face_recognition:8000/get_confidence.json'
+        self.MANAGER_REACTION_URL = 'http://manager:8000/reaction.json'
 
         self.service = {
             'processor': 'http://localhost:8000/processor.json',
@@ -85,6 +86,13 @@ class Service_exchange():
     def reaction(self, data):
 #        print(type(data), data)
         print('Reaction on:', len(data))
+        try:
+            response = requests.post(self.MANAGER_REACTION_URL, json=data)
+            response.raise_for_status()
+            return response.content
+        except Exception as err:
+            logging.error(str(err))
+            return None
 
 if __name__ == "__main__":
     se = Service_exchange()

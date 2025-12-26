@@ -4,12 +4,23 @@ from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse, Fil
 from fastapi.responses import Response
 from db_wrapper import DB
 from sender import Sender, get_email_cfg
-from datetime import date
+from datetime import date, datetime
+
+from pydantic import BaseModel
 
 from xlsx_report import mk_xlsx_report
 from img_report import mk_img_report
 
 from print_order import print_order
+
+class Reaction(BaseModel):
+    reaction_name: str
+    face_uuid: str
+    parent_uuid: str
+    ts: datetime
+    name: str
+    common_param: dict | None
+    param: dict | None
 
 app = FastAPI()
 
@@ -116,3 +127,10 @@ def list_to_html(data_list, subject):
     html_table += "</table>"
 
     return html_table
+
+@app.post('/reaction.json')
+async def process_reaction(reactions: list[Reaction]):
+    for reaction in reactions:
+        print(reaction)
+
+    return JSONResponse(content={"status": 'Ok'})
