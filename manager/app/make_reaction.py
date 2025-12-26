@@ -7,9 +7,9 @@ def main():
     make_reaction(reactions)
 
 def make_reaction(reactions):
-    for reaction in reactions:
-        print(reaction)
-        print()
+#    for reaction in reactions:
+#        print(reaction)
+#        print()
 
     return 'Ok'
 
