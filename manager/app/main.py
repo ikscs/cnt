@@ -12,8 +12,10 @@ from xlsx_report import mk_xlsx_report
 from img_report import mk_img_report
 
 from print_order import print_order
+from make_reaction import make_reaction
 
 class Reaction(BaseModel):
+    point_id: int
     reaction_name: str
     face_uuid: str
     parent_uuid: str
@@ -36,16 +38,6 @@ async def hello():
 
 @app.get('/print_order')
 def get_pdf_file(order_id: int):
-    #pdf_path = "test.pdf"
-
-    #return FileResponse(
-    #    path=pdf_path,
-    #    media_type="application/pdf",
-    #    filename="invoice.pdf"
-    #)
-
-    #with open(pdf_path, 'rb') as f:
-    #    content_bytes = f.read()
 
     db = DB()
     db.open()
@@ -130,7 +122,5 @@ def list_to_html(data_list, subject):
 
 @app.post('/reaction.json')
 async def process_reaction(reactions: list[Reaction]):
-    for reaction in reactions:
-        print(reaction)
-
-    return JSONResponse(content={"status": 'Ok'})
+    result = make_reaction(reactions)
+    return JSONResponse(content={"status": 'Ok', "result": result})

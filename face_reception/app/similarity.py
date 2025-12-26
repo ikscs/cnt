@@ -20,7 +20,7 @@ LIMIT 1;
 '''
     sql2 = f"CALL update_neighbors(%s, %s, %s, %s, %s);"
     sql3 = "CREATE TABLE IF NOT EXISTS person_match (ts TIMESTAMPTZ, face_uuid TEXT, parent_uuid TEXT, group_id INTEGER, point_id INTEGER);"
-    sql4 = """SELECT t.name AS reaction_name, m.face_uuid, m.parent_uuid, ts, p.name, common_param, param
+    sql4 = """SELECT point_id, t.name AS reaction_name, m.face_uuid, m.parent_uuid, ts, p.name, common_param, param
 FROM person_match m
 JOIN person_group_reaction r USING(group_id)
 JOIN reaction_type t USING(reaction_id)
