@@ -1,7 +1,6 @@
 #encoding: utf-8
 import telebot
 import os
-from dotenv import dotenv_values
 
 class TBot():
     def __init__(self, credentials={}):
@@ -18,7 +17,11 @@ class TBot():
     def send_message(self, text):
         self.bot.send_message(self.chat_id, text=text, parse_mode='html', disable_web_page_preview=True)
 
+    def send_photo(self, photo, caption):
+        self.bot.send_photo(self.chat_id, photo=photo, caption=caption)
+
 if __name__ == '__main__':
+    from dotenv import dotenv_values
     credentials = dotenv_values('.env_telegramm')
 
     bot = TBot(credentials)
