@@ -20,13 +20,17 @@ LIMIT 1;
 '''
     sql2 = f"CALL update_neighbors(%s, %s, %s, %s, %s);"
     sql3 = "CREATE TEMPORARY TABLE person_match (ts TIMESTAMPTZ, face_uuid TEXT, parent_uuid TEXT, group_id INTEGER, point_id INTEGER);"
-    sql4 = """SELECT point_id, t.name AS reaction_name, m.face_uuid, m.parent_uuid, ts, p.name, common_param, param
+    sql4 = """SELECT m.point_id, pn."name" AS point_name, pg."name" AS group_name, t.name AS reaction_name,
+m.face_uuid, m.parent_uuid, ts, p.name AS name, common_param, param
 FROM person_match m
 JOIN person_group_reaction r USING(group_id)
 JOIN reaction_type t USING(reaction_id)
 JOIN face_referer_data f ON f.face_uuid=parent_uuid
 JOIN person p USING(person_id)
-ORDER BY point_id, reaction_id;"""
+JOIN point pn USING(point_id)
+JOIN person_group pg ON pg.group_id = r.group_id
+ORDER BY m.point_id, reaction_id;"""
+
     sql5 = "TRUNCATE person_match;"
 
     def __init__(self):

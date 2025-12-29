@@ -85,12 +85,12 @@ class Service_exchange():
 
     def reaction(self, data):
 #data = [
-#    (5, 'No reaction', '6eff665c0cf24e09a6d180f1e90077fb', '34316fff4388494fb08193502fae939a', datetime.now(), 'Лариса', {'x': 123}, {'y': 456}),
-#    (5, 'No reaction', 'c3664862f46b485fbb04e2b4d6e5c8f3', '65d25cd148e6434d8c8d3820168e926a', datetime.now(), 'Адель', {'x': 123}, {'y': 456}),
+#    (5, 'Sezon', 'Співробітники', 'No reaction', '6eff665c0cf24e09a6d180f1e90077fb', '34316fff4388494fb08193502fae939a', datetime.now(), 'Лариса', {'x': 123}, {'y': 456}),
+#    (5, 'Sezon', 'Співробітники', 'No reaction', 'c3664862f46b485fbb04e2b4d6e5c8f3', '65d25cd148e6434d8c8d3820168e926a', datetime.now(), 'Адель', {'x': 123}, {'y': 456}),
 #]
         payload = []
         for row in data:
-            payload.append({'point_id': row[0], 'reaction_name': row[1], 'face_uuid': row[2], 'parent_uuid': row[3], 'ts': row[4].isoformat(), 'name': row[5], 'common_param': row[6], 'param': row[7]})
+            payload.append({'point_id': row[0], 'point_name': row[1], 'group_name': row[2], 'reaction_name': row[3], 'face_uuid': row[4], 'parent_uuid': row[5], 'ts': row[6].isoformat(), 'name': row[7], 'common_param': row[8], 'param': row[9]})
 
         try:
             response = requests.post(self.MANAGER_REACTION_URL, json=payload)

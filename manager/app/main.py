@@ -16,6 +16,8 @@ from make_reaction import make_reaction
 
 class Reaction(BaseModel):
     point_id: int
+    point_name: str
+    group_name: str
     reaction_name: str
     face_uuid: str
     parent_uuid: str
@@ -122,5 +124,10 @@ def list_to_html(data_list, subject):
 
 @app.post('/reaction.json')
 async def process_reaction(reactions: list[Reaction]):
-    result = make_reaction(reactions)
+    db = DB()
+    db.open()
+
+    result = make_reaction(db.cursor, reactions)
+
+    db.close()
     return JSONResponse(content={"status": 'Ok', "result": result})

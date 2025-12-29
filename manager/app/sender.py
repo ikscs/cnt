@@ -36,6 +36,7 @@ class Sender:
             attachment_data = [attachment_data,]
             attachment_name = [attachment_name,]
 
+        n = 1
         for att_data, att_name in zip(attachment_data, attachment_name):
             if not (att_data and att_name):
                 continue
@@ -54,6 +55,8 @@ class Sender:
                 encoders.encode_base64(part)
 
             part.add_header('Content-Disposition', 'attachment', filename=att_name)
+            part.add_header('Content-ID', f'<att{n}>')
+            n += 1
             msg.attach(part)
 
 #        print(msg)
