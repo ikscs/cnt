@@ -94,7 +94,7 @@ def email_reaction(sender, param, data):
 
     subject = param.get('subject', "Face match event default")
 
-    html = f'<div style="max-width: 300px;"><table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">\n'
+    html = f'<div style="max-width: 320px;"><table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">\n'
 
     for n, e in enumerate(data, 1):
         attachment_name.append(e['name'] + f'_event_{n}.jpg')
@@ -102,15 +102,18 @@ def email_reaction(sender, param, data):
         attachment_data.append(e['face'])
         attachment_data.append(e['parent'])
 
-        html += '<tr><td align="center" style="padding: 0 20px;">'
+        html += '<tr><td align="center" style="padding: 0 10px;">'
         html += f'<h1>{e["point_name"]}: {e["ts"]}</h1></td>'
-        html += '<td align="center" style="padding: 0 20px;">'
-        html += f'<td><h1>{e["group_name"]}: <i>{e["name"]}</i></h1></td></tr>'
+        html += '<td align="center" style="padding: 0 10px;">'
+        html += f'<h1>{e["group_name"]}: <i>{e["name"]}</i></h1></td></tr>\n'
 
-        html += '<tr><td align="center" style="padding: 0 20px;">'
-        html += f'<img src="cid:att{2*n-1}" width="150" style="display: block; width: 100%; max-width: 150px; height: auto;"></td>'
-        html += '<td align="center" style="padding: 0 20px;">'
-        html += f'<img src="cid:att{2*n}" width="150" style="display: block; width: 100%; max-width: 150px; height: auto;"></td></tr>\n'
+        html += '<tr><td align="center" style="padding: 0 10px;">'
+        html += f'<img src="cid:att{2*n-1}" height="150" style="display: block; width: 100%; max-width: 150px; width: auto;"></td>'
+        html += '<td align="center" style="padding: 0 10px;">'
+        html += f'<img src="cid:att{2*n}" height="150" style="display: block; width: 100%; max-width: 150px; width: auto;"></td></tr>\n'
+
+        html += '<tr><td colspan="2"><hr></td></tr>\n'
+
     html += '</table></div>'
 
     sender.send_email(subject, body=None, html=html, attachment_data=attachment_data, attachment_name=attachment_name)
