@@ -69,9 +69,7 @@ def exec_reaction(cursor, se, point_id, reaction, param, values):
         email_reaction(sender, param, data)
         return
     elif reaction == 'Telegram':
-        result, bot = get_telegram(param)
-        if not result:
-            return
+        bot = get_telegram(param)
 
         telegram_reaction(bot, param, data)
         return
@@ -96,7 +94,7 @@ def email_reaction(sender, param, data):
 
     subject = param.get('subject', "Face match event default")
 
-    html = f'<h1>{data[0]["point_name"]}</h1><br><table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">\n'
+    html = f'<div style="max-width: 300px;"><table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">\n'
 
     for n, e in enumerate(data, 1):
         attachment_name.append(e['name'] + f'_event_{n}.jpg')
@@ -104,14 +102,16 @@ def email_reaction(sender, param, data):
         attachment_data.append(e['face'])
         attachment_data.append(e['parent'])
 
-        html += f'<tr><td colspan="2" align="center" style="padding: 0 5px;"><h1>{e["ts"]}<br>{e["group_name"]}<br><i>{e["name"]}</i></h1></td></tr>\n'
-        html += '<tr><td align="center" style="padding: 0 5px;">'
-        html += f'<img src="cid:att{2*n-1}" width="150" style="display: block; width: 100%; max-width: 150px; height: auto;">'
-        html += '</td><td align="center" style="padding: 0 5px;">'
-        html += f'<img src="cid:att{2*n}" width="150" style="display: block; width: 100%; max-width: 150px; height: auto;">'
-        html += '</td></tr>\n'
+        html += '<tr><td align="center" style="padding: 0 20px;">'
+        html += f'<h1>{e["point_name"]}: {e["ts"]}</h1></td>'
+        html += '<td align="center" style="padding: 0 20px;">'
+        html += f'<td><h1>{e["group_name"]}: <i>{e["name"]}</i></h1></td></tr>'
 
-    html += '</table>'
+        html += '<tr><td align="center" style="padding: 0 20px;">'
+        html += f'<img src="cid:att{2*n-1}" width="150" style="display: block; width: 100%; max-width: 150px; height: auto;"></td>'
+        html += '<td align="center" style="padding: 0 20px;">'
+        html += f'<img src="cid:att{2*n}" width="150" style="display: block; width: 100%; max-width: 150px; height: auto;"></td></tr>\n'
+    html += '</table></div>'
 
     sender.send_email(subject, body=None, html=html, attachment_data=attachment_data, attachment_name=attachment_name)
 
@@ -153,16 +153,14 @@ def get_sender(cursor):
     return True, sender
 
 def get_telegram(param):
-    credentials = {'TELEGRAMM_TOKEN': param.get('token', os.environ.get('TELEGRAMM_TOKEN', '')), 'TELEGRAMM_CHAT_ID': param.get('chat_id', os.environ.get('TELEGRAMM_CHAT_ID', ''))}
-    if not credentials['TELEGRAMM_TOKEN'] or not credentials['TELEGRAMM_CHAT_ID']:
-        return False, None
-    bot = TBot()
-    return True, bot
+    credentials = {'TELEGRAM_TOKEN': param.get('token'), 'TELEGRAM_CHAT_ID': param.get('chat_id')}
+    bot = TBot(credentials)
+    return bot
 
 if __name__ == "__main__":
     from dotenv import load_dotenv, dotenv_values
     load_dotenv()
-    load_dotenv('.env_telegramm')
+    load_dotenv('.env_telegram')
 
     db = DB()
     db.open()
