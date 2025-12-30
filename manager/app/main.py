@@ -127,7 +127,23 @@ async def process_reaction(reactions: list[Reaction]):
     db = DB()
     db.open()
 
-    result = make_reaction(db.cursor, reactions)
+    data = []
+    for e in reactions:
+        row = {
+            'point_id': e.point_id,
+            'point_name': e.point_name,
+            'group_name': e.group_name,
+            'reaction_name': e.reaction_name,
+            'face_uuid': e.face_uuid,
+            'parent_uuid': e.parent_uuid,
+            'ts': e.ts.isoformat(),
+            'name': e.name,
+            'common_param': e.common_param if e.common_param else {},
+            'param': e.param if e.param else {},
+        }
+        data.append(row)
+
+    result = make_reaction(db.cursor, data)
 
     db.close()
     return JSONResponse(content={"status": 'Ok', "result": result})
