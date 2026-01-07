@@ -112,9 +112,36 @@ class PayCallbackView(View):
                 cursor.execute(query, [json.dumps(response), response.get('order_id')])
 
                 query = f'INSERT INTO billing.callback_log (app_id, "type", data) VALUES (%s, %s, %s)'
-                cursor.execute(query, [app_id, 'liqpay', json.dumps(response),])
+                cursor.execute(query, [app_id, 'liqpay', json.dumps(response, ensure_ascii=False),])
 
                 cursor.execute(PAYMENTS_QUERY, [response.get('order_id'),])
+
+        return HttpResponse()
+
+@method_decorator(csrf_exempt, name='dispatch')
+class PayCallbackViewMB(View):
+    def post(self, request, *args, **kwargs):
+        app_id = request.GET.get('app_id')
+        if not app_id:
+            return HttpResponse()
+        if not app_id in mb.app_ids.values():
+            return HttpResponse()
+
+        data = request.body
+        signature = response.headers.get('X-Sign')
+
+        if not data or not signature:
+            return HttpResponse()
+
+        if mb.verify_signature(app_id, data, signature):
+            try:
+                decoded_string = request.body.decode('utf-8')
+                response = json.loads(decoded_string)
+            except Exception as err:
+                response = {}
+            with connections['pcnt'].cursor() as cursor:
+                query = f'INSERT INTO billing.callback_log (app_id, "type", data) VALUES (%s, %s, %s)'
+                cursor.execute(query, [app_id, 'monobank', json.dumps(response, ensure_ascii=False),])
 
         return HttpResponse()
 

@@ -1,6 +1,9 @@
 import os
 import copy
 import requests
+import base64
+import hashlib
+import ecdsa
 
 class MB():
     app_ids = dict()
@@ -37,8 +40,24 @@ class MB():
             self.params[app_id]['webHookUrl'] = self.cfg[app_id]['WEBHOOK_URL']
             self.params[app_id]['webHookUrls'] = {'chargeUrl': self.cfg[app_id]['CHARGE_URL'], 'statusUrl': self.cfg[app_id]['STATUS_URL'],}
 
-            response = self.get_request(self.key_url, self.cfg[app_id]['TOKEN'])
-            self.cfg[app_id]['KEY'] = response['key']
+            try:
+                response = self.get_request(self.key_url, self.cfg[app_id]['TOKEN'])
+                #self.cfg[app_id]['KEY'] = response['key']
+                pub_key_bytes = base64.b64decode(response['key'])
+                self.cfg[app_id]['KEY'] = ecdsa.VerifyingKey.from_pem(pub_key_bytes.decode())
+            except Exception as err:
+                print(str(err))
+
+    def verify_signature(self, app_id, body_bytes, signature_str):
+        signature_bytes = base64.b64decode(signature_str)
+        try:
+            ok = self.cfg[app_id]['KEY'].verify(signature_bytes, body_bytes, sigdecode=ecdsa.util.sigdecode_der, hashfunc=hashlib.sha256)
+        except Exception as err:
+            print(str(err))
+            return False
+        if ok:
+            return True
+        return False
 
     def mk_monobank_pay(self, app_id, periodicity=None):
         return None
