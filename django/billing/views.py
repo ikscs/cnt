@@ -16,8 +16,8 @@ from pcnt.base import PCNTBaseViewSet, PCNTBaseAPIView, PCNTBaseReadOnlyViewSet
 import environ
 environ.Env.read_env()
 
-from liqpay_api import LP
-from monobank_api import MB
+from .liqpay_api import LP
+from .monobank_api import MB
 
 lp = LP()
 mb = MB()
