@@ -128,7 +128,7 @@ class PayCallbackViewMB(View):
             return HttpResponse()
 
         data = request.body
-        signature = response.headers.get('X-Sign')
+        signature = request.headers.get('X-Sign')
 
         if not data or not signature:
             return HttpResponse()
@@ -138,6 +138,7 @@ class PayCallbackViewMB(View):
                 decoded_string = request.body.decode('utf-8')
                 response = json.loads(decoded_string)
             except Exception as err:
+                print(str(err))
                 response = {}
             with connections['pcnt'].cursor() as cursor:
                 query = f'INSERT INTO billing.callback_log (app_id, "type", data) VALUES (%s, %s, %s)'
