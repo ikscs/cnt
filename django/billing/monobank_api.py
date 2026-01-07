@@ -94,8 +94,11 @@ class MB():
         if response.status_code != 200:
             return f'Error request: {url}'
 
-        return 'Ok'
-
+        try:
+            return response.json()
+        except Exception as err:
+            print(err)
+            return str(err)
 
 if __name__ == '__main__':
     import environ

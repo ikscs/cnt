@@ -10,6 +10,7 @@ from rest_framework import status
 
 from django.db import connections
 import json
+import copy
 
 from pcnt.base import PCNTBaseViewSet, PCNTBaseAPIView, PCNTBaseReadOnlyViewSet
 
@@ -58,7 +59,7 @@ sandbox_token	Успішна оплата по токену
         rows = []
         field_names = []
         with connections['pcnt'].cursor() as cursor:
-            query = f'SELECT order_id, amount, currency, description, data, app_id FROM {ORDER_TABLE} ORDER BY order_id;'
+            query = f'SELECT order_id, amount, currency, description, data, app_id, "type" FROM {ORDER_TABLE} ORDER BY order_id;'
             cursor.execute(query)
             field_names = [e[0] for e in cursor.description]
             for row in cursor.fetchall():
@@ -74,9 +75,9 @@ sandbox_token	Успішна оплата по токену
             for k, v in row.items():
                 if k == 'order_id':
                     form_html = f'''
-<br><a href="/api/billing/pay_liqpay/?order_id={row['order_id']}" target="_blank">Pay Now</a>
-<br>
-<br><a href="/api/billing/pay_status/?order_id={row['order_id']}">Check status</a>
+<br><a href="/api/billing/pay_liqpay/?order_id={row['order_id']}" target="_blank">LiqPay</a>
+<br><a href="/api/billing/pay_monobank/?order_id={row['order_id']}" target="_blank">MonoBank</a>
+<br><br><a href="/api/billing/pay_status/?order_id={row['order_id']}">Check status</a>
 '''
                     result += f'<td>{v}{form_html}</td>'
                 else:
@@ -153,9 +154,8 @@ class PaymentLiqpayView(APIView):
         if not order_id:
             return Response({'error': 'Missing order_id'}, status=status.HTTP_400_BAD_REQUEST)
 
-        field_names = []
         with connections['pcnt'].cursor() as cursor:
-            query = f'SELECT amount, currency, description, periodicity, app_id FROM {ORDER_TABLE} WHERE order_id=%s;'
+            query = f'''SELECT amount, currency, description, periodicity, app_id FROM {ORDER_TABLE} WHERE order_id=%s AND "type"='liqpay';'''
             cursor.execute(query, [order_id,])
 
             row = cursor.fetchone()
@@ -195,6 +195,63 @@ class PaymentLiqpayView(APIView):
 <input type="hidden" name="signature" value="{signature}">
 <input type="submit" value="Pay Now">
 </form>
+</body></html>'''
+
+        return HttpResponse(html)
+
+class PaymentMonobankView(APIView):
+    def get(self, request, *args, **kwargs):
+        order_id = request.query_params.get('order_id')
+
+        if not order_id:
+            return Response({'error': 'Missing order_id'}, status=status.HTTP_400_BAD_REQUEST)
+
+        with connections['pcnt'].cursor() as cursor:
+            query = f'''SELECT amount, (SELECT code FROM billing.currency WHERE name=currency) AS currency_code, description, periodicity, app_id FROM {ORDER_TABLE} WHERE order_id=%s AND "type"='monobank';'''
+            cursor.execute(query, [order_id,])
+
+            row = cursor.fetchone()
+            if not row:
+                return Response({'error': f'Not found {order_id}'}, status=status.HTTP_400_BAD_REQUEST)
+
+            app_id = row[4]
+            if not app_id in mb.app_ids.values():
+                return Response({'error': f'{app_id} has no monobank params'}, status=status.HTTP_400_BAD_REQUEST)
+
+            amount = int(round(float(row[0])*100))
+            currency = row[1]
+            description = row[2]
+            periodicity = row[3]
+
+            if not amount or not currency or not description:
+                return Response({'error': f'Order {order_id} invalid'}, status=status.HTTP_400_BAD_REQUEST)
+
+        params = copy.deepcopy(mb.params[app_id])
+
+        params['amount'] = amount
+        params['ccy'] = currency
+        params['merchantPaymInfo']['reference'] = str(order_id)
+        params['merchantPaymInfo']['destination'] = description
+
+        if periodicity:
+            params['interval'] = {'day': '1d', 'week': '1w', 'month': '1m', 'year': '1y'}.get(periodicity, '1m')
+            url = mb.subscribe_url
+        else:
+            url = mb.invoice_url
+
+        result = mb.post_request(url, mb.cfg[app_id]['TOKEN'], params)
+        try:
+            link = result['pageUrl']
+        except Exception as err:
+            return Response({'error': f'Cannot process order {order_id}'}, status=status.HTTP_400_BAD_REQUEST)
+
+        with connections['pcnt'].cursor() as cursor:
+            query = f'''UPDATE {ORDER_TABLE} SET data=%s WHERE order_id=%s AND "type"='monobank';'''
+            cursor.execute(query, [json.dumps(result), order_id,])
+
+        html = f'''<html><head><meta http-equiv="refresh" content="0; url={link}"><title>Redirecting...</title></head>
+<body>
+<p>If you are not redirected automatically, follow this <a href="{link}">link</a>.</p>
 </body></html>'''
 
         return HttpResponse(html)
