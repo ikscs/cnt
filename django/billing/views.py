@@ -139,7 +139,7 @@ class PayCallbackView(View):
                 cursor.execute(query, [app_id, 'liqpay', json.dumps(response, ensure_ascii=False),])
 
                 query = f'UPDATE {ORDER_TABLE} SET data=%s WHERE order_id=%s'
-                cursor.execute(query, [json.dumps(response), response.get('order_id')])
+                cursor.execute(query, [json.dumps(response, ensure_ascii=False), response.get('order_id')])
 
                 cursor.execute(PAYMENTS_QUERY, [response.get('order_id'),])
 
@@ -299,7 +299,7 @@ class PaymentMonobankView(APIView):
 
         with connections['pcnt'].cursor() as cursor:
             query = f'''UPDATE {ORDER_TABLE} SET data=%s WHERE order_id=%s AND "type"='monobank';'''
-            cursor.execute(query, [json.dumps(result), order_id,])
+            cursor.execute(query, [json.dumps(result, ensure_ascii=False), order_id,])
 
         html = f'''<html><head><meta http-equiv="refresh" content="0; url={link}"><title>Redirecting...</title></head>
 <body>
@@ -316,27 +316,40 @@ class PaymentStatusView(APIView):
             return Response({'error': 'Missing order_id'}, status=status.HTTP_400_BAD_REQUEST)
 
         with connections['pcnt'].cursor() as cursor:
-            query = f'SELECT app_id FROM {ORDER_TABLE} WHERE order_id=%s'
+            query = f'''SELECT app_id, "type", (data->>'invoiceId')::TEXT FROM {ORDER_TABLE} WHERE order_id=%s'''
             cursor.execute(query, [order_id,])
             row = cursor.fetchone()
             if not row:
                 return Response({'error': f'Not found {order_id}'}, status=status.HTTP_400_BAD_REQUEST)
             app_id = row[0]
+            type_pay = row[1]
+            invoice_id = row[2]
 
-        liqpay = lp.mk_liqpay(app_id)
+        if type_pay == 'liqpay':
+            liqpay = lp.mk_liqpay(app_id)
+            try:
+                result = liqpay.api('request', {
+                    'action': 'status',
+                    'version': '3',
+                    'order_id': order_id,
+                })
+            except Exception as e:
+                return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        try:
-            res = liqpay.api('request', {
-                'action': 'status',
-                'version': '3',
-                'order_id': order_id,
-            })
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        elif type_pay == 'monobank':
+            if not invoice_id:
+                return Response({'error': f'Order {order_id} has no invoiceId'}, status=status.HTTP_400_BAD_REQUEST)
+
+            result = mb.get_request(f'{mb.status_url}{invoice_id}', mb.cfg[app_id]['TOKEN'])
+            if not isinstance(result, dict):
+                return Response({'error': str(result)}, status=status.HTTP_400_BAD_REQUEST)
+
+        else:
+            return Response({'error': f'Cannot check staus of order {order_id}'}, status=status.HTTP_400_BAD_REQUEST)
 
         with connections['pcnt'].cursor() as cursor:
             query = f'UPDATE {ORDER_TABLE} SET data=%s WHERE order_id=%s'
-            cursor.execute(query, [json.dumps(res), order_id])
+            cursor.execute(query, [json.dumps(result, ensure_ascii=False), order_id])
 
             cursor.execute(PAYMENTS_QUERY, [order_id,])
 
@@ -404,7 +417,7 @@ class CreateLiqpayOrderView(PCNTBaseAPIView):
         with connections['pcnt'].cursor() as cursor:
             query = f'SELECT * FROM billing.create_liqpay_order(%s, %s, %s, %s, %s, %s, %s, %s);'
             try:
-                cursor.execute(query, [amount, currency, description, app_id, user.tenant_id, user.id, user.mode, json.dumps(param)])
+                cursor.execute(query, [amount, currency, description, app_id, user.tenant_id, user.id, user.mode, json.dumps(param, ensure_ascii=False)])
                 row = cursor.fetchone()
                 if not row or not row[0]:
                     return Response({'error': f'Order not created'}, status=status.HTTP_400_BAD_REQUEST)

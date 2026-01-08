@@ -18,6 +18,7 @@ class MB():
     invoice_url = f'{base}/api/merchant/invoice/create'
     subscribe_url = f'{base}/api/merchant/subscription/create'
     key_url = f'{base}/api/merchant/pubkey'
+    status_url = f'{base}/api/merchant/invoice/status?invoiceId='
 
     def __init__(self):
         ids = os.environ.get('MONOBANK_APP_IDS', '').split(',')
