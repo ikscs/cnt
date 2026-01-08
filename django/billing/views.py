@@ -274,7 +274,7 @@ class PaymentMonobankView(APIView):
             currency = row[1]
             description = row[2]
             periodicity = row[3]
-            link = row[4]
+            link = row[5]
 
             if not amount or not currency or not description:
                 return Response({'error': f'Order {order_id} invalid'}, status=status.HTTP_400_BAD_REQUEST)
