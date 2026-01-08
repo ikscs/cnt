@@ -26,10 +26,14 @@ mb = MB()
 ORDER_TABLE = 'billing.orders'
 PAYMENTS_TABLE = 'billing.payments'
 
-PAYMENTS_QUERY = f'''INSERT INTO {PAYMENTS_TABLE} (order_id, bank_order_id, currency, amount, dt, type, app_id, customer_id)
+PAYMENTS_QUERY = f'''INSERT INTO {PAYMENTS_TABLE} (order_id, bank_order_id, currency, amount, dt, type, app_id, customer_id, subscription_id)
 SELECT  o.order_id, COALESCE(o.data->>'liqpay_order_id', ''), o.data->>'currency', (o.data->>'amount')::numeric,
 to_timestamp((o.data->>'end_date')::double precision / 1000.0),
-o.type, o.app_id, o.customer_id
+o.type, o.app_id, o.customer_id,
+CASE
+  WHEN (o.data->>'action')::TEXT = 'pay' THEN NULL
+  ELSE o.data->>'action'
+END
 FROM {ORDER_TABLE} o
 WHERE o.order_id = %s
 AND o.data->>'status' IN ('success', 'subscribed', 'sandbox')
@@ -40,7 +44,29 @@ amount = EXCLUDED.amount,
 dt = EXCLUDED.dt,
 type = EXCLUDED.type,
 app_id = EXCLUDED.app_id,
-customer_id  = EXCLUDED.customer_id;'''
+customer_id  = EXCLUDED.customer_id,
+subscription_id = EXCLUDED.subscription_id;'''
+
+
+PAYMENTS_QUERY_MB = f'''INSERT INTO {PAYMENTS_TABLE} (order_id, bank_order_id, currency, amount, dt, type, app_id, customer_id, subscription_id)
+SELECT o.order_id, o.data->>'invoiceId',
+(SELECT name FROM billing.currency WHERE code=(o.data->>'ccy')::INTEGER),
+((o.data->>'amount')::REAL/100)::numeric(20,2),
+(o.data->>'modifiedDate')::TIMESTAMPTZ,
+o.type, o.app_id, o.customer_id,
+o.data->>'subscriptionId'
+FROM {ORDER_TABLE} o
+WHERE o.order_id = %s
+AND o.data->>'status' IN ('success')
+ON CONFLICT (order_id, bank_order_id) DO UPDATE SET
+currency = EXCLUDED.currency,
+amount = EXCLUDED.amount,
+dt = EXCLUDED.dt,
+type = EXCLUDED.type,
+app_id = EXCLUDED.app_id,
+customer_id  = EXCLUDED.customer_id,
+subscription_id = EXCLUDED.subscription_id;'''
+
 
 class PayView(View):
     header = '''<html><body><pre>
@@ -109,11 +135,11 @@ class PayCallbackView(View):
             except Exception as err:
                 response = {}
             with connections['pcnt'].cursor() as cursor:
-                query = f'UPDATE {ORDER_TABLE} SET data=%s WHERE order_id=%s'
-                cursor.execute(query, [json.dumps(response), response.get('order_id')])
-
                 query = f'INSERT INTO billing.callback_log (app_id, "type", data) VALUES (%s, %s, %s)'
                 cursor.execute(query, [app_id, 'liqpay', json.dumps(response, ensure_ascii=False),])
+
+                query = f'UPDATE {ORDER_TABLE} SET data=%s WHERE order_id=%s'
+                cursor.execute(query, [json.dumps(response), response.get('order_id')])
 
                 cursor.execute(PAYMENTS_QUERY, [response.get('order_id'),])
 
@@ -144,6 +170,32 @@ class PayCallbackViewMB(View):
             with connections['pcnt'].cursor() as cursor:
                 query = f'INSERT INTO billing.callback_log (app_id, "type", data) VALUES (%s, %s, %s)'
                 cursor.execute(query, [app_id, 'monobank', json.dumps(response, ensure_ascii=False),])
+
+                subscription_id = response.get('subscriptionId')
+                invoice_id = response.get('invoiceId')
+
+                if subscription_id:
+                    query = f'''SELECT order_id FROM {ORDER_TABLE} WHERE app_id=%s AND "type"=%s AND (data->>'subscriptionId')::TEXT=%s;'''
+                    cursor.execute(query, [app_id, 'monobank', subscription_id,])
+                    row = cursor.fetchone()
+                    if not row:
+                        order_id = 0
+                    else:
+                        order_id = row[0]
+                else:
+                    order_id = response.get('reference')
+                    try:
+                        order_id = int(order_id)
+                    except Exception as err:
+                        order_id = 0
+
+                status = response.get('status')
+                if status in ('success', 'failure', 'reversed', 'expired'):
+                    query = f'UPDATE {ORDER_TABLE} SET data=%s WHERE order_id=%s'
+                    cursor.execute(query, [json.dumps(response, ensure_ascii=False), order_id,])
+
+                if status in ('success',):
+                    cursor.execute(PAYMENTS_QUERY_MB, [order_id, ])
 
         return HttpResponse()
 
