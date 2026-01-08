@@ -259,7 +259,7 @@ class PaymentMonobankView(APIView):
             return Response({'error': 'Missing order_id'}, status=status.HTTP_400_BAD_REQUEST)
 
         with connections['pcnt'].cursor() as cursor:
-            query = f'''SELECT amount, (SELECT code FROM billing.currency WHERE name=currency) AS currency_code, description, periodicity, app_id FROM {ORDER_TABLE} WHERE order_id=%s AND "type"='monobank';'''
+            query = f'''SELECT amount, (SELECT code FROM billing.currency WHERE name=currency) AS currency_code, description, periodicity, app_id, (data->>'pageUrl')::TEXT FROM {ORDER_TABLE} WHERE order_id=%s AND "type"='monobank';'''
             cursor.execute(query, [order_id,])
 
             row = cursor.fetchone()
@@ -274,32 +274,34 @@ class PaymentMonobankView(APIView):
             currency = row[1]
             description = row[2]
             periodicity = row[3]
+            link = row[4]
 
             if not amount or not currency or not description:
                 return Response({'error': f'Order {order_id} invalid'}, status=status.HTTP_400_BAD_REQUEST)
 
-        params = copy.deepcopy(mb.params[app_id])
+        if not link:
+            params = copy.deepcopy(mb.params[app_id])
 
-        params['amount'] = amount
-        params['ccy'] = currency
-        params['merchantPaymInfo']['reference'] = str(order_id)
-        params['merchantPaymInfo']['destination'] = description
+            params['amount'] = amount
+            params['ccy'] = currency
+            params['merchantPaymInfo']['reference'] = str(order_id)
+            params['merchantPaymInfo']['destination'] = description
 
-        if periodicity:
-            params['interval'] = {'day': '1d', 'week': '1w', 'month': '1m', 'year': '1y'}.get(periodicity, '1m')
-            url = mb.subscribe_url
-        else:
-            url = mb.invoice_url
+            if periodicity:
+                params['interval'] = {'day': '1d', 'week': '1w', 'month': '1m', 'year': '1y'}.get(periodicity, '1m')
+                url = mb.subscribe_url
+            else:
+                url = mb.invoice_url
 
-        result = mb.post_request(url, mb.cfg[app_id]['TOKEN'], params)
-        try:
-            link = result['pageUrl']
-        except Exception as err:
-            return Response({'error': f'Cannot process order {order_id}'}, status=status.HTTP_400_BAD_REQUEST)
+            result = mb.post_request(url, mb.cfg[app_id]['TOKEN'], params)
+            try:
+                link = result['pageUrl']
+            except Exception as err:
+                return Response({'error': f'Cannot process order {order_id}'}, status=status.HTTP_400_BAD_REQUEST)
 
-        with connections['pcnt'].cursor() as cursor:
-            query = f'''UPDATE {ORDER_TABLE} SET data=%s WHERE order_id=%s AND "type"='monobank';'''
-            cursor.execute(query, [json.dumps(result, ensure_ascii=False), order_id,])
+            with connections['pcnt'].cursor() as cursor:
+                query = f'''UPDATE {ORDER_TABLE} SET data=%s WHERE order_id=%s AND "type"='monobank';'''
+                cursor.execute(query, [json.dumps(result, ensure_ascii=False), order_id,])
 
         html = f'''<html><head><meta http-equiv="refresh" content="0; url={link}"><title>Redirecting...</title></head>
 <body>
@@ -351,7 +353,10 @@ class PaymentStatusView(APIView):
             query = f'UPDATE {ORDER_TABLE} SET data=%s WHERE order_id=%s'
             cursor.execute(query, [json.dumps(result, ensure_ascii=False), order_id])
 
-            cursor.execute(PAYMENTS_QUERY, [order_id,])
+            if type_pay == 'liqpay':
+                cursor.execute(PAYMENTS_QUERY, [order_id,])
+            elif type_pay == 'monobank':
+                cursor.execute(PAYMENTS_QUERY_MB, [order_id,])
 
         return Response(result, status=status.HTTP_200_OK)
 
