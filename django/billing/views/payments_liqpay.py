@@ -10,8 +10,9 @@ from rest_framework import status
 from django.db import connections
 import json
 
-from .liqpay_api import LP
+from .payments_common import ORDER_TABLE, PAYMENTS_TABLE, CURRENCY_TABLE, LOG_TABLE
 
+from .liqpay_api import LP
 lp = LP()
 
 PAYMENTS_QUERY = f'''INSERT INTO {PAYMENTS_TABLE} (order_id, bank_order_id, currency, amount, dt, type, app_id, customer_id, subscription_id)

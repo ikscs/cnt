@@ -8,13 +8,13 @@ from rest_framework import status
 from django.db import connections
 import json
 
-import environ
-environ.Env.read_env()
-
 ORDER_TABLE = 'billing.orders'
 PAYMENTS_TABLE = 'billing.payments'
 CURRENCY_TABLE = 'billing.currency'
 LOG_TABLE = 'billing.callback_log'
+
+from .payments_liqpay import PAYMENTS_QUERY, lp
+from .payments_monobank import PAYMENTS_QUERY_MB, mb
 
 class PayView(View):
     header = '''<html><body><pre>

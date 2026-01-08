@@ -11,8 +11,9 @@ from django.db import connections
 import json
 import copy
 
-from .monobank_api import MB
+from .payments_common import ORDER_TABLE, PAYMENTS_TABLE, CURRENCY_TABLE, LOG_TABLE
 
+from .monobank_api import MB
 mb = MB()
 
 PAYMENTS_QUERY_MB = f'''INSERT INTO {PAYMENTS_TABLE} (order_id, bank_order_id, currency, amount, dt, type, app_id, customer_id, subscription_id)
