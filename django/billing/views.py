@@ -353,7 +353,7 @@ class PaymentStatusView(APIView):
 
             cursor.execute(PAYMENTS_QUERY, [order_id,])
 
-        return Response(res, status=status.HTTP_200_OK)
+        return Response(result, status=status.HTTP_200_OK)
 
 class PaymentResultView(View):
     def get(self, request, *args, **kwargs):
