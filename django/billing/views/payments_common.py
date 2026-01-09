@@ -12,6 +12,7 @@ ORDER_TABLE = 'billing.orders'
 PAYMENTS_TABLE = 'billing.payments'
 CURRENCY_TABLE = 'billing.currency'
 LOG_TABLE = 'billing.callback_log'
+SUBSCRIBE_TABLE = 'billing.subscription'
 
 from .payments_liqpay import PAYMENTS_QUERY, lp
 from .payments_monobank import PAYMENTS_QUERY_MB, mb

@@ -10,9 +10,10 @@ from rest_framework import status
 from django.db import connections
 import json
 
-from .payments_common import ORDER_TABLE, PAYMENTS_TABLE, CURRENCY_TABLE, LOG_TABLE
+from .payments_common import ORDER_TABLE, PAYMENTS_TABLE, CURRENCY_TABLE, LOG_TABLE, SUBSCRIBE_TABLE
 
 from .liqpay_api import LP
+bank = 'liqpay'
 lp = LP()
 
 PAYMENTS_QUERY = f'''INSERT INTO {PAYMENTS_TABLE} (order_id, bank_order_id, currency, amount, dt, type, app_id, customer_id, subscription_id)
@@ -60,7 +61,7 @@ class PayCallbackView(View):
                 response = {}
             with connections['pcnt'].cursor() as cursor:
                 query = f'INSERT INTO {LOG_TABLE} (app_id, "type", data) VALUES (%s, %s, %s)'
-                cursor.execute(query, [app_id, 'liqpay', json.dumps(response, ensure_ascii=False),])
+                cursor.execute(query, [app_id, bank, json.dumps(response, ensure_ascii=False),])
 
                 query = f'UPDATE {ORDER_TABLE} SET data=%s WHERE order_id=%s'
                 cursor.execute(query, [json.dumps(response, ensure_ascii=False), response.get('order_id')])
@@ -78,7 +79,7 @@ class PaymentLiqpayView(APIView):
             return Response({'error': 'Missing order_id'}, status=status.HTTP_400_BAD_REQUEST)
 
         with connections['pcnt'].cursor() as cursor:
-            query = f'''SELECT amount, currency, description, periodicity, app_id FROM {ORDER_TABLE} WHERE order_id=%s AND "type"='liqpay';'''
+            query = f'''SELECT amount, currency, description, periodicity, app_id FROM {ORDER_TABLE} WHERE order_id=%s AND "type"='{bank}';'''
             cursor.execute(query, [order_id,])
 
             row = cursor.fetchone()
@@ -87,7 +88,7 @@ class PaymentLiqpayView(APIView):
 
             app_id = row[4]
             if not app_id in lp.app_ids.values():
-                return Response({'error': f'{app_id} has no liqpay params'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'error': f'{app_id} has no {bank} params'}, status=status.HTTP_400_BAD_REQUEST)
 
             amount = row[0]
             currency = row[1]

@@ -11,9 +11,10 @@ from django.db import connections
 import json
 import copy
 
-from .payments_common import ORDER_TABLE, PAYMENTS_TABLE, CURRENCY_TABLE, LOG_TABLE
+from .payments_common import ORDER_TABLE, PAYMENTS_TABLE, CURRENCY_TABLE, LOG_TABLE, SUBSCRIBE_TABLE
 
 from .monobank_api import MB
+bank = 'monobank'
 mb = MB()
 
 PAYMENTS_QUERY_MB = f'''INSERT INTO {PAYMENTS_TABLE} (order_id, bank_order_id, currency, amount, dt, type, app_id, customer_id, subscription_id)
@@ -35,6 +36,28 @@ app_id = EXCLUDED.app_id,
 customer_id  = EXCLUDED.customer_id,
 subscription_id = EXCLUDED.subscription_id;'''
 
+SUBSCRIBE_QUERY = f'''INSERT INTO {SUBSCRIBE_TABLE}
+(customer_id, app_id, order_id, subscription_id, subscription_state, type, currency, amount, periodicity, dt_start_pay, dt_next_pay, data)
+SELECT o.customer_id, o.app_id, o.order_id,
+%s, %s, o.type,
+(SELECT COALESCE(name, 'unknown') FROM {CURRENCY_TABLE} WHERE code=%s),
+(%s)::numeric(20,2),
+%s,%s,%s,%s
+FROM orders o
+WHERE o.order_id = %s
+ON CONFLICT (customer_id) DO UPDATE SET
+app_id = EXCLUDED.app_id,
+order_id = EXCLUDED.order_id,
+subscription_id = EXCLUDED.subscription_id,
+subscription_state = EXCLUDED.subscription_state,
+type = EXCLUDED.type,
+currency = EXCLUDED.currency,
+amount = EXCLUDED.amount,
+periodicity = EXCLUDED.periodicity,
+dt_start_pay = EXCLUDED.dt_start_pay,
+dt_next_pay = EXCLUDED.dt_next_pay,
+data = EXCLUDED.data;
+'''
 
 @method_decorator(csrf_exempt, name='dispatch')
 class PayCallbackViewMB(View):
@@ -60,14 +83,14 @@ class PayCallbackViewMB(View):
                 response = {}
             with connections['pcnt'].cursor() as cursor:
                 query = f'INSERT INTO {LOG_TABLE} (app_id, "type", data) VALUES (%s, %s, %s)'
-                cursor.execute(query, [app_id, 'monobank', json.dumps(response, ensure_ascii=False),])
+                cursor.execute(query, [app_id, bank, json.dumps(response, ensure_ascii=False),])
 
                 subscription_id = response.get('subscriptionId')
                 invoice_id = response.get('invoiceId')
 
                 if subscription_id:
                     query = f'''SELECT order_id FROM {ORDER_TABLE} WHERE app_id=%s AND "type"=%s AND (data->>'subscriptionId')::TEXT=%s;'''
-                    cursor.execute(query, [app_id, 'monobank', subscription_id,])
+                    cursor.execute(query, [app_id, bank, subscription_id,])
                     row = cursor.fetchone()
                     if not row:
                         order_id = 0
@@ -88,6 +111,15 @@ class PayCallbackViewMB(View):
                 if status in ('success',):
                     cursor.execute(PAYMENTS_QUERY_MB, [order_id, ])
 
+                if status in ('active', 'cancelled') and subscription_id:
+                    amount = response.get('amount', 0)/100
+
+                    periodicity = {'1d': 'day', '1w': 'week', '1m': 'month', '1y': 'year'}.get(response.get('interval'), response.get('interval', 'unknown'))
+                    start_dt = response.get('startDate')
+                    next_dt = response.get('nextChargeDate')
+
+                    cursor.execute(SUBSCRIBE_QUERY, [subscription_id, status, response.get('ccy'), amount, periodicity, start_dt, next_dt, json.dumps(response, ensure_ascii=False), order_id])
+
         return HttpResponse()
 
 class PaymentMonobankView(APIView):
@@ -98,7 +130,7 @@ class PaymentMonobankView(APIView):
             return Response({'error': 'Missing order_id'}, status=status.HTTP_400_BAD_REQUEST)
 
         with connections['pcnt'].cursor() as cursor:
-            query = f'''SELECT amount, (SELECT code FROM {CURRENCY_TABLE} WHERE name=currency) AS currency_code, description, periodicity, app_id, (data->>'pageUrl')::TEXT FROM {ORDER_TABLE} WHERE order_id=%s AND "type"='monobank';'''
+            query = f'''SELECT amount, (SELECT code FROM {CURRENCY_TABLE} WHERE name=currency) AS currency_code, description, periodicity, app_id, (data->>'pageUrl')::TEXT FROM {ORDER_TABLE} WHERE order_id=%s AND "type"='{bank}';'''
             cursor.execute(query, [order_id,])
 
             row = cursor.fetchone()
@@ -107,7 +139,7 @@ class PaymentMonobankView(APIView):
 
             app_id = row[4]
             if not app_id in mb.app_ids.values():
-                return Response({'error': f'{app_id} has no monobank params'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'error': f'{app_id} has no {bank} params'}, status=status.HTTP_400_BAD_REQUEST)
 
             amount = int(round(float(row[0])*100))
             currency = row[1]
@@ -139,7 +171,7 @@ class PaymentMonobankView(APIView):
                 return Response({'error': f'Cannot process order {order_id}'}, status=status.HTTP_400_BAD_REQUEST)
 
             with connections['pcnt'].cursor() as cursor:
-                query = f'''UPDATE {ORDER_TABLE} SET data=%s WHERE order_id=%s AND "type"='monobank';'''
+                query = f'''UPDATE {ORDER_TABLE} SET data=%s WHERE order_id=%s AND "type"='{bank}';'''
                 cursor.execute(query, [json.dumps(result, ensure_ascii=False), order_id,])
 
         html = f'''<html><head><meta http-equiv="refresh" content="0; url={link}"><title>Redirecting...</title></head>
