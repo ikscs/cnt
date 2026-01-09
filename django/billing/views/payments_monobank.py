@@ -7,6 +7,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
+from pcnt.base import PCNTBaseAPIView
+
 from django.db import connections
 import json
 import copy
@@ -180,3 +182,48 @@ class PaymentMonobankView(APIView):
 </body></html>'''
 
         return HttpResponse(html)
+
+
+class GetMbSubscriptionView(PCNTBaseAPIView):
+    def get(self, request, *args, **kwargs):
+
+        customer_id = request.query_params.get('customer_id')
+
+        if not customer_id:
+            return Response({'error': 'Missing customer_id'}, status=status.HTTP_400_BAD_REQUEST)
+
+        with connections['pcnt'].cursor() as cursor:
+            query = f'''SELECT subscription_id, app_id FROM {SUBSCRIBE_TABLE} WHERE customer_id=%s;'''
+            cursor.execute(query, [customer_id,])
+            row = cursor.fetchone()
+            if not row or not row[0]:
+                return Response({})
+
+            subscription_id = row[0]
+            app_id = row[1]
+
+            response = mb.get_monobank_subscription_state(app_id, subscription_id)
+            if not isinstance(response, dict):
+                return Response({'error': str(response)}, status=status.HTTP_400_BAD_REQUEST)
+
+            query = f'''UPDATE {SUBSCRIBE_TABLE}
+SET subscription_state=%s, currency=(SELECT COALESCE(name, 'unknown') FROM {CURRENCY_TABLE} WHERE code=%s), amount=%s, periodicity=%s, dt_start_pay=%s, dt_next_pay=%s, data=%s
+WHERE customer_id = %s
+RETURNING customer_id, app_id, order_id, subscription_id, subscription_state, "type", currency, amount, periodicity, dt_start_pay, dt_next_pay;
+'''
+            status = response.get('status')
+            amount = response.get('amount', 0)/100
+            currency = response.get('ccy')
+            periodicity = {'1d': 'day', '1w': 'week', '1m': 'month', '1y': 'year'}.get(response.get('interval'), response.get('interval', 'unknown'))
+            start_dt = response.get('startDate')
+            next_dt = response.get('nextChargeDate')
+
+            cursor.execute(query, [status, currency, amount, periodicity, start_dt, next_dt, json.dumps(response, ensure_ascii=False), customer_id])
+            row = cursor.fetchone()
+            if not row or not row[0]:
+                return Response({})
+
+            names = [desc[0] for desc in cursor.description]
+            res = {k: v for k, v in zip(names, row)}
+
+        return Response(res)

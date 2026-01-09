@@ -2,7 +2,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
 from .views import PayView, PayCallbackView, PaymentLiqpayView, PaymentStatusView, PaymentResultView, CreateLiqpayOrderView
-from .views import PayCallbackViewMB, PaymentMonobankView
+from .views import PayCallbackViewMB, PaymentMonobankView, GetMbSubscriptionView
 from .views import BalanceViewSet, TestOrderViewSet, SubscriptionBasePriceViewSet
 from .views import OrderReadOnlyViewSet
 from .views import CameraCategoryReadOnlyViewSet
@@ -25,6 +25,7 @@ urlpatterns = [
     path('pay_result/', PaymentResultView.as_view(), name='pay_result'),
     path('pay_liqpay/', PaymentLiqpayView.as_view(), name='pay_liqpay'),
     path('pay_monobank/', PaymentMonobankView.as_view(), name='pay_monobank'),
+    path('get_subscription/', GetMbSubscriptionView.as_view(), name='get_subscription'),
 
     path('create_liqpay_order/', CreateLiqpayOrderView.as_view(), name='create_liqpay_order'),
 ]

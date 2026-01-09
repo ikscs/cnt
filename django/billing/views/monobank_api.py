@@ -19,6 +19,7 @@ class MB():
     subscribe_url = f'{base}/api/merchant/subscription/create'
     key_url = f'{base}/api/merchant/pubkey'
     status_url = f'{base}/api/merchant/invoice/status?invoiceId='
+    subscription_url = f'{base}/api/merchant/subscription/status?subscriptionId='
 
     def __init__(self):
         ids = os.environ.get('MONOBANK_APP_IDS', '').split(',')
@@ -101,13 +102,20 @@ class MB():
             print(err)
             return str(err)
 
+    def get_monobank_subscription_state(self, app_id, subscription_id):
+        try:
+            token = self.cfg[app_id]['TOKEN']
+        except Exception as err:
+            print(err)
+            return f'Token not found for {app_id}'
+
+        result = self.get_request(f'{self.subscription_url}{subscription_id}', token)
+        return result
+
 if __name__ == '__main__':
     import environ
 
     environ.Env.read_env()
     mb = MB()
-
-    ORDER_TABLE = 'billing.orders'
-    PAYMENTS_TABLE = 'billing.payments'
 
     print(mb.cfg)

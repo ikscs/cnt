@@ -45,7 +45,4 @@ if __name__ == '__main__':
     environ.Env.read_env()
     lp = LP()
 
-    ORDER_TABLE = 'billing.orders'
-    PAYMENTS_TABLE = 'billing.payments'
-
     print(lp.cfg)
