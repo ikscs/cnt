@@ -227,3 +227,37 @@ RETURNING customer_id, app_id, order_id, subscription_id, subscription_state, "t
             res = {k: v for k, v in zip(names, row)}
 
         return Response(res)
+
+class MbUnSubscriptionView(PCNTBaseAPIView):
+    def get(self, request, *args, **kwargs):
+
+        customer_id = request.query_params.get('customer_id')
+
+        if not customer_id:
+            return Response({'result': False, 'txt': 'Missing customer_id'}, status=status.HTTP_400_BAD_REQUEST)
+
+        with connections['pcnt'].cursor() as cursor:
+            query = f'''SELECT subscription_id, app_id, subscription_state FROM {SUBSCRIBE_TABLE} WHERE customer_id=%s;'''
+            cursor.execute(query, [customer_id,])
+            row = cursor.fetchone()
+            if not row or not row[0]:
+                return Response({'result': True, 'txt': 'Subscription doesnt esist'})
+
+            subscription_id = row[0]
+            app_id = row[1]
+            subscription_state = row[2]
+
+            if subscription_state != 'active':
+                return Response({'result': True, 'txt': 'Subscription already not active'})
+
+            response = mb.monobank_subscription_remove(app_id, subscription_id)
+            if not isinstance(response, dict):
+                return Response({'result': False, 'txt': str(response)})
+
+            if response.get('errCode') != 'OK':
+                return Response({'result': True, 'txt': response.get('errText'), 'code': response.get('errCode')})
+
+            query = f'''UPDATE {SUBSCRIBE_TABLE} SET subscription_state='canceled' WHERE customer_id = %s'''
+            cursor.execute(query, [customer_id,])
+
+        return Response({'result': True, 'txt': 'Subscription canceled succesefull'})

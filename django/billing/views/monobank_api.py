@@ -20,6 +20,7 @@ class MB():
     key_url = f'{base}/api/merchant/pubkey'
     status_url = f'{base}/api/merchant/invoice/status?invoiceId='
     subscription_url = f'{base}/api/merchant/subscription/status?subscriptionId='
+    subscription_remove_url = f'{base}/api/merchant/subscription/remove'
 
     def __init__(self):
         ids = os.environ.get('MONOBANK_APP_IDS', '').split(',')
@@ -65,12 +66,7 @@ class MB():
         return None
 
     def get_request(self, url, token):
-        headers = {
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-            "X-Token": token
-        }
-
+        headers = {"Accept": "application/json", "Content-Type": "application/json", "X-Token": token}
         try:
             response = requests.get(url, headers=headers)
         except Exception as err:
@@ -82,12 +78,7 @@ class MB():
         return response.json()
 
     def post_request(self, url, token, data):
-        headers = {
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-            "X-Token": token
-        }
-
+        headers = {"Accept": "application/json", "Content-Type": "application/json", "X-Token": token}
         try:
             response = requests.post(url, headers=headers, json=data)
         except Exception as err:
@@ -102,6 +93,24 @@ class MB():
             print(err)
             return str(err)
 
+    def post_200(self, url, token, data):
+        headers = {"Accept": "application/json", "Content-Type": "application/json", "X-Token": token}
+        try:
+            response = requests.post(url, headers=headers, json=data)
+        except Exception as err:
+            print(err)
+            return {'errCode': 'ERROR', 'errText': str(err)}
+        if response.status_code == 200:
+            return {'errCode': 'OK', 'errText': 'Ok'}
+
+        try:
+            result = response.json()
+        except Exception as err:
+            print(err)
+            return {'errCode': 'ERROR', 'errText': str(err)}
+
+        return {'errCode': result.get('errCode', 'UNKNOWN'), 'errText': result.get('errText', '')}
+
     def get_monobank_subscription_state(self, app_id, subscription_id):
         try:
             token = self.cfg[app_id]['TOKEN']
@@ -110,6 +119,16 @@ class MB():
             return f'Token not found for {app_id}'
 
         result = self.get_request(f'{self.subscription_url}{subscription_id}', token)
+        return result
+
+    def monobank_subscription_remove(self, app_id, subscription_id):
+        try:
+            token = self.cfg[app_id]['TOKEN']
+        except Exception as err:
+            print(err)
+            return {'errCode': 'ERROR', 'errText': f'Token not found for {app_id}'}
+
+        result = self.post_200(self.subscription_remove_url, token, {'subscriptionId': subscription_id})
         return result
 
 if __name__ == '__main__':
