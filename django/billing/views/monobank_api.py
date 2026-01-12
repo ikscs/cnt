@@ -21,6 +21,7 @@ class MB():
     status_url = f'{base}/api/merchant/invoice/status?invoiceId='
     subscription_url = f'{base}/api/merchant/subscription/status?subscriptionId='
     subscription_remove_url = f'{base}/api/merchant/subscription/remove'
+    subscription_edit_url = f'{base}/api/merchant/subscription/edit'
 
     def __init__(self):
         ids = os.environ.get('MONOBANK_APP_IDS', '').split(',')
@@ -128,7 +129,7 @@ class MB():
             print(err)
             return {'errCode': 'ERROR', 'errText': f'Token not found for {app_id}'}
 
-        result = self.post_200(self.subscription_remove_url, token, {'subscriptionId': subscription_id})
+        result = self.post_200(self.subscription_edit_url, token, {'action': 'cancel', 'subscriptionId': subscription_id})
         return result
 
 if __name__ == '__main__':
