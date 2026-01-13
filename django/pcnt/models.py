@@ -239,7 +239,7 @@ class FormVersion(models.Model):
     class Meta:
         managed = False
         db_table = 'form_version'
-        unique_together = (('form', 'version'),)
+        unique_together = (('form_id', 'version'),)
         db_table_comment = 'Версии форм с их конфигурацией'
 
 class Incoming(models.Model):
@@ -305,7 +305,7 @@ class Origin(models.Model):
     class Meta:
         managed = False
         db_table = 'origin'
-        unique_together = (('point', 'id'),)
+        unique_together = (('point_id', 'id'),)
 
 
 class OriginType(models.Model):
@@ -580,7 +580,7 @@ class ReportSchedule(models.Model):
     class Meta:
         managed = False
         db_table = 'report_schedule'
-        unique_together = ('customer', 'app_id', 'report_id', 'lang', 'params')
+        unique_together = ('customer_id', 'app_id', 'report_id', 'lang', 'params')
 
     def __str__(self):
         return f"Schedule: {self.customer_id} - {self.app_id} - {self.report_id} - {self.lang}"
@@ -602,4 +602,4 @@ class VReportSchedule(models.Model):
     class Meta:
         managed = False
         db_table = 'v_report_schedule'
-        unique_together = ('customer', 'app_id', 'report_id', 'lang', 'params')
+        unique_together = ('customer_id', 'app_id', 'report_id', 'lang', 'params')
