@@ -15,6 +15,7 @@ from pcnt.views import CallReportView
 from pcnt.views import RegisterCustomerView
 
 from .views import HelloView
+from .views import UnsubscribeView
 
 from pcnt.views import ThemeViewSet
 router_api = DefaultRouter()
@@ -32,6 +33,8 @@ urlpatterns = [
     path('api/authdemo/', include('authdemo.urls')),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+
+    path("api/unsubscribe/", UnsubscribeView.as_view(), name='unsubscribe'),
 ]
 
 urlpatterns.append(path('api/pcnt/', include('pcnt.urls')))

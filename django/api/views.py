@@ -1,11 +1,13 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from django.http import HttpResponse
 from rest_framework.permissions import IsAuthenticated
 
 from rest_framework import status
 from django.db import connections
 from django.utils.html import escape  # for sanitizing 'func' input
 import json
+import uuid
 
 '''
 class CallDbFunctionView(APIView):
@@ -36,3 +38,39 @@ class HelloView(APIView):
 
     def get(self, request):
         return Response({"message": "Hello, JWT Authenticated User!"})
+
+class UnsubscribeView(APIView):
+    def is_valid_uuid(self, val):
+        try:
+            uuid.UUID(str(val))
+            return True
+        except ValueError:
+            return False
+
+    def get(self, request):
+        uuid = request.query_params.get('uuid')
+
+        if not uuid:
+            result = 'Missing subscribe uuid'
+        elif not self.is_valid_uuid(uuid):
+            result = 'Wrong uuid'
+        else:
+            result = 'Unsubscrebe succesefull'
+            try:
+                with connections['pcnt'].cursor() as cursor:
+                    query = 'UPDATE public.customer_ext SET email_enabled=false WHERE unsubscribe_uuid=%s;'
+                    cursor.execute(query, [uuid,])
+            except Exception as err:
+                result = 'Something goes wrong'
+
+        data = f'''<!DOCTYPE html>
+<html>
+<head>
+  <title>Unsubscribe</title>
+  <meta charset="utf-8">
+</head>
+<body>
+  <h1>{result}</h1>
+</body>
+</html>'''
+        return HttpResponse(data)
