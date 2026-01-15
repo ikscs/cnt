@@ -40,37 +40,63 @@ class HelloView(APIView):
         return Response({"message": "Hello, JWT Authenticated User!"})
 
 class UnsubscribeView(APIView):
-    def is_valid_uuid(self, val):
-        try:
-            uuid.UUID(str(val))
-            return True
-        except ValueError:
-            return False
-
-    def get(self, request):
-        uuid = request.query_params.get('uuid')
-
-        if not uuid:
-            result = 'Missing subscribe uuid'
-        elif not self.is_valid_uuid(uuid):
-            result = 'Wrong uuid'
-        else:
-            result = 'Unsubscrebe succesefull'
-            try:
-                with connections['pcnt'].cursor() as cursor:
-                    query = 'UPDATE public.customer_ext SET email_enabled=false WHERE unsubscribe_uuid=%s;'
-                    cursor.execute(query, [uuid,])
-            except Exception as err:
-                result = 'Something goes wrong'
-
-        data = f'''<!DOCTYPE html>
+    template = '''<!DOCTYPE html>
 <html>
 <head>
   <title>Unsubscribe</title>
   <meta charset="utf-8">
 </head>
 <body>
-  <h1>{result}</h1>
+{}
 </body>
 </html>'''
+
+    def is_valid_uuid(self, val):
+        if not val:
+            return False
+        try:
+            uuid.UUID(str(val))
+            return True
+        except ValueError:
+            return False
+
+    def unsubscribe(self, uuid):
+        try:
+            with connections['pcnt'].cursor() as cursor:
+                query = 'UPDATE public.customer_ext SET email_enabled=false WHERE unsubscribe_uuid=%s;'
+                cursor.execute(query, [uuid,])
+                result = '<h1>Unsubscrebe succesefull</h1>'
+        except Exception as err:
+            result = '<h1>Something goes wrong</h1>'
+        return result
+
+    def get(self, request):
+        uuid = request.query_params.get('uuid')
+        if not self.is_valid_uuid(uuid):
+            result = '<h1>Wrong uuid</h1>'
+        else:
+            result = f'''Confirm unsubscribe
+<form action="" method="POST">
+  <input type="hidden" name="uuid" value="{uuid}">
+  <input type="hidden" name="confirm" value="yes">
+  <button type="submit">Confirm</button>
+</form>'''
+
+        data = self.template.format(result)
+
+        return HttpResponse(data)
+
+    def post(self, request):
+        uuid = request.POST.get('uuid')
+        confirm = request.POST.get('confirm')
+        print(uuid, confirm)
+
+        if confirm != 'yes':
+            result = '<h1>Unsubscribe terminated</h1>'
+        elif not self.is_valid_uuid(uuid):
+            result = '<h1>Wrong uuid</h1>'
+        else:
+            result = self.unsubscribe(uuid)
+
+        data = self.template.format(result)
         return HttpResponse(data)
