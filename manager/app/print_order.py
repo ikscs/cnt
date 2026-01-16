@@ -22,21 +22,24 @@ FROM billing.orders JOIN public.customer USING(customer_id) WHERE order_id=%s;''
 
     return True, row
 
-def get_template(cursor, currency):
-    sql = f"SELECT type AS t, name, content FROM billing.invoice_template WHERE currency=%s;"
+def get_template(cursor, table, param):
+    p = ' AND '.join([f'"{k}"=%s' for k in param.keys()])
+    sql = f"SELECT type AS t, name, content FROM {table}"
+    if p:
+        sql = f"{sql} WHERE {p}"
 
-    cursor.execute(sql, [currency,])
+    cursor.execute(sql, list(param.values()))
 
     rows = cursor.fetchall()
     if not rows:
         return False, None
 
-    html = ''
+    html = dict()
     png = dict()
     for row in rows:
         t, name, content = row
         if t == 'html':
-            html = content.tobytes().decode('utf-8')
+            html[name] = content.tobytes().decode('utf-8')
         elif t == 'png':
             v = content.tobytes()
             v = base64.b64encode(v).decode('utf-8')
@@ -135,13 +138,13 @@ def print_order(order_id, cursor):
 
     amount, currency, description, dt, legal_name, order_txt = row
 
-    result, html, png = get_template(cursor, currency)
+    result, html, png = get_template(cursor, 'billing.invoice_template', {'currency': currency})
     if not result:
         return None
 
     invoice_data = create_invoice_data(order_txt, amount, description, dt, legal_name)
 
-    output_pdf = generate_pdf_from_template(html=html, png=png, data=invoice_data)
+    output_pdf = generate_pdf_from_template(html=html['template'], png=png, data=invoice_data)
 
     return output_pdf
 

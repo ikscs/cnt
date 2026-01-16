@@ -18,3 +18,4 @@
 9 0,3,9,12,15,18,21 * * * /app/lost_faces_approve.py
 
 30 21 * * * /app/daily_report.sh
+4 4,10,16,22 * * * /app/mass_email_sender.sh
