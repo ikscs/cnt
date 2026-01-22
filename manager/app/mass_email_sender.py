@@ -56,7 +56,7 @@ def main():
     db.conn.commit()
 
     #SELECT desired tasks
-    sql_email_list = '''SELECT customer_id, legal_name, lang, currency, email, order_count, unsubscribe_uuid
+    sql_email_list = '''SELECT customer_id, legal_name, c.lang, c.currency, email, order_count, unsubscribe_uuid
 FROM public.customer c
 LEFT JOIN public.customer_ext e USING(customer_id)
 LEFT JOIN lpr.lpr_order o USING(customer_id)
