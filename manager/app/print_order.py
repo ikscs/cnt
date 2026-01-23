@@ -12,7 +12,7 @@ def to_money(value):
 
 def get_order(cursor, order_id):
     sql = '''SELECT amount, o.currency, description, dt, legal_name,
-(SELECT t.order_txt FROM billing.generate_order_txt(customer_id::INTEGER, order_id, o.currency, description) AS t)
+(SELECT t.order_txt FROM billing.generate_order_txt(customer_id::INTEGER, order_id) AS t)
 FROM billing.orders o JOIN public.customer USING(customer_id) WHERE order_id=%s;'''
 
     cursor.execute(sql, [order_id,])
