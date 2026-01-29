@@ -1,0 +1,6 @@
+psycopg2-binary
+uvicorn[standard]
+python-multipart
+fastapi==0.98.0
+requests
+python-dotenv

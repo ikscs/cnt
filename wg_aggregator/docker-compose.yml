@@ -1,0 +1,46 @@
+services:
+  wg_agg:
+    image: linuxserver/wireguard:latest
+    build: .
+    container_name: wg_agg
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    sysctls:
+      - net.ipv4.ip_forward=1
+      - net.ipv4.conf.all.src_valid_mark=1
+    volumes:
+      - ./wg_confs:/config/wg_confs
+      - ./app:/app
+    ports:
+      - "127.0.0.1:8083:8000"
+#      - "10001-20000:10001-20000"
+    extra_hosts:
+      - "cnt:185.252.24.146"
+#        echo 'Remove old conf' &&
+#        rm -rf /config/wg_confs/* &&
+    command: >
+      sh -c "
+        echo '[+] Waiting for wireguard...' &&
+        sleep 3 &&
+        echo '[+] Done' &&
+        ip route replace default via 172.24.0.1 &&
+        echo '[+] Default route added' &&
+        uvicorn api:app --host 0.0.0.0 --port 8000
+      "
+    env_file: ../.env
+    networks:
+      - swag_network
+
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sS http://localhost:8000 | grep 'healthy' || exit 1"]
+      interval: 300s
+      retries: 3
+      start_period: 30s
+      timeout: 5s
+
+networks:
+  swag_network:
+    driver: bridge
+    external: true
