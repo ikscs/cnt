@@ -3,7 +3,7 @@ from jinja2 import Template
 from weasyprint import HTML
 import base64
 
-from grn import grn_text
+from grn import grn_text, usd_text, change_currency
 
 def to_money(value):
     s = f"{value:,.2f}".replace(',', '&nbsp')
@@ -11,8 +11,7 @@ def to_money(value):
     return s
 
 def get_order(cursor, order_id):
-    sql = '''SELECT amount, o.currency, description, dt, legal_name,
-(SELECT t.order_txt FROM billing.generate_order_txt(customer_id::INTEGER, order_id) AS t)
+    sql = '''SELECT amount, o.currency, dt, legal_name, (billing.generate_order_txt(customer_id::INTEGER, order_id)).*
 FROM billing.orders o JOIN public.customer USING(customer_id) WHERE order_id=%s;'''
 
     cursor.execute(sql, [order_id,])
@@ -71,12 +70,24 @@ def create_invoice_data(order_txt, amount, description, dt, legal_name):
     total = round(float(amount), 2)
     vat = round(total*0.2, 2)
 
+    total_txt = grn_text(total)
+    total_txt_usd_uk = change_currency(total_txt, 'UAH', 'USD')
+    total_txt_eur_uk = change_currency(total_txt, 'UAH', 'EUR')
+
+    total_txt_usd = usd_text(total)
+    total_txt_eur = change_currency(total_txt_usd, 'USD', 'EUR')
+
     invoice_data = {
         'order_txt': order_txt,
-        'description': description,
+        'description': description['uk'],
+        'descr': description,
 
         'total': to_money(total),
-        'total_txt': grn_text(total),
+        'total_txt': total_txt,
+        'total_txt_usd': total_txt_usd,
+        'total_txt_eur': total_txt_eur,
+        'total_txt_usd_uk': total_txt_usd_uk,
+        'total_txt_eur_uk': total_txt_eur_uk,
 
         'vat': to_money(vat),
         'vat_txt': grn_text(vat),
@@ -96,10 +107,12 @@ def get_base64_image(image_path):
 def main_offline():
     from datetime import datetime
 
-    order_id = 108
-    row = (4860.05, 'UAH', 'LPR000170008 Доступ до онлайн-сервису розпізнавання автомобільних номерів згідно рахунку № L-0300108 від 25-12-2025', datetime.now(), 'ТОВ «Компанія клієнта»', 'L-0300108')
+    order_id = 195
 
-    amount, currency, description, dt, legal_name, order_txt = row
+    d = {'en': 'LPR000170008 Access to the online service for recognizing vehicle license plates', 'pl': 'LPR000170008 Access to the online service for recognizing vehicle license plates', 'uk': 'LPR000170008 Доступ до онлайн-сервису розпізнавання автомобільних номерів'}
+    row = (2194.4, 'USD', datetime.now(), 'Tramp Ltd.', 'L-0300108', d)
+
+    amount, currency, dt, legal_name, order_txt, description = row
 
     with open("template.html", "rt", encoding='utf-8') as f:
         html = f.read()
@@ -136,7 +149,7 @@ def print_order(order_id, cursor):
     if not result:
         return None
 
-    amount, currency, description, dt, legal_name, order_txt = row
+    amount, currency, dt, legal_name, order_txt, description = row
 
     result, html, png = get_template(cursor, 'billing.invoice_template', {'currency': currency})
     if not result:
@@ -151,5 +164,5 @@ def print_order(order_id, cursor):
 if __name__ == "__main__":
     from dotenv import load_dotenv
     load_dotenv()
-    main()
-    #main_offline()
+#    main()
+    main_offline()

@@ -24,6 +24,24 @@ def grn_text(s):
     res = res.replace('  ', ' ').capitalize()
     return res
 
+def change_currency(s, curr_in, curr_out):
+    vocabl = {
+        'UAH': {
+            'USD': {'гривень': 'долларів', 'гривна': 'доллар', 'гривні': 'доллари', 'копійок': 'центів', 'копійка': 'цент', 'копійки': 'центи',},
+            'EUR': {'гривень': 'євро', 'гривна': 'євро', 'гривні': 'євро', 'копійок': 'центів', 'копійка': 'цент', 'копійки': 'центи',},
+        },
+        'USD': {
+            'EUR': {'dollars': 'euro', 'dollar': 'euro',},
+        },
+    }
+
+    if (curr_in not in vocabl) or (curr_out not in vocabl[curr_in]):
+        return 'error'
+
+    for k, v in vocabl[curr_in][curr_out].items():
+        s = s.replace(k, v)
+    return s
+
 def txt(v):
     s = int(v/100)
     d = int((v - s*100)/10)
@@ -53,9 +71,95 @@ def sklon(v):
 
     return 0
 
+def int_to_english(n: int) -> str:
+    if n == 0:
+        return "zero"
+
+    if n < 0:
+        return "minus " + int_to_english(-n)
+
+    ones = (
+        "", "one", "two", "three", "four", "five",
+        "six", "seven", "eight", "nine"
+    )
+
+    teens = (
+        "ten", "eleven", "twelve", "thirteen", "fourteen",
+        "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"
+    )
+
+    tens = (
+        "", "", "twenty", "thirty", "forty",
+        "fifty", "sixty", "seventy", "eighty", "ninety"
+    )
+
+    thousands = (
+        "", "thousand", "million", "billion", "trillion"
+    )
+
+    def chunk_to_words(num: int) -> str:
+        words = []
+
+        if num >= 100:
+            words.append(ones[int(num // 100)])
+            words.append("hundred")
+            num = int(num % 100)
+
+        if 10 <= num < 20:
+            words.append(teens[int(num - 10)])
+        else:
+            if num >= 20:
+                words.append(tens[int(num // 10)])
+                num = int(num % 10)
+            if num > 0:
+                words.append(ones[int(num)])
+
+        return " ".join(words)
+
+    words = []
+    chunk_index = 0
+
+    while n > 0:
+        chunk = int(n % 1000)
+        if chunk:
+            part = chunk_to_words(chunk)
+            if thousands[chunk_index]:
+                part += " " + thousands[chunk_index]
+            words.append(part)
+        n //= 1000
+        chunk_index += 1
+
+    return " ".join(reversed(words))
+
+def usd_text(s):
+    usd = int(s)
+    cent = round((s - usd)*100)
+
+    res = ''
+
+    if usd == 0:
+        res += 'zero dollars'
+    elif usd == 1:
+        res += 'one dollar'
+    else:
+        res += int_to_english(usd)
+        res += ' dollars'
+
+    res += f' {cent:02} '
+    res += ' cents'
+
+    res = res.replace('  ', ' ').capitalize()
+    return res
+
 if __name__ == '__main__':
     import random
 
     for e in range(10):
         v = round(1000000*random.random(), 2)
         print(v, '\t', grn_text(v))
+
+    print()
+
+    for e in range(10):
+        v = round(100000*random.random(), 2)
+        print(v, '\t', usd_text(v))
