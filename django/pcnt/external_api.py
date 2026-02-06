@@ -30,6 +30,20 @@ class Userfront():
             return f'Error request: {url}'
         return 'Ok'
 
+    def del_request(self, url):
+        return 'Ok'
+        try:
+            response = requests.put(url, headers=self.headers)
+        except Exception as err:
+            return str(err)
+        if response.status_code != 200:
+            return f'Error request: {url}'
+        return 'Ok'
+
+    def delete_user(self):
+        result = self.del_request(self.users_url)
+        return result
+
     def set_roles(self, roles):
         result = self.put_request(self.roles_url, {"roles": roles})
         return result

@@ -13,6 +13,7 @@ from rest_framework.routers import DefaultRouter
 from pcnt.views import CallDbFunctionView
 from pcnt.views import CallReportView
 from pcnt.views import RegisterCustomerView
+from pcnt.views import DeleteCustomerView
 
 from .views import HelloView
 from .views import UnsubscribeView
@@ -27,6 +28,8 @@ urlpatterns = [
     path("api/report/", CallReportView.as_view(), name='call-report-view'),
 
     path("api/register_customer/", RegisterCustomerView.as_view(), name='register_customer'),
+    path("api/delete_customer/", DeleteCustomerView.as_view(), name='delete_customer'),
+
     path("api/", include(router_api.urls)),
 
     path("api/hello/", HelloView.as_view(), name='hello'),

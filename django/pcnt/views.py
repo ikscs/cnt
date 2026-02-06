@@ -526,6 +526,22 @@ class RegisterCustomerView(PCNTBaseAPIView):
         data = {'customer_id': customer_id, 'legal_name': input_data['legal_name'], 'address': input_data['address'], 'country': input_data['country'], 'city': input_data['city'], 'email': input_data['email']}
         return Response(data, status=status.HTTP_201_CREATED)
 
+class DeleteCustomerView(PCNTBaseAPIView):
+    def get(self, request):
+        try:
+            user = request.user
+        except Exception as err:
+            return Response('Wrong input data', status=status.HTTP_400_BAD_REQUEST)
+
+        uf = Userfront(user)
+        if uf.error:
+            return Response(uf.error, status=status.HTTP_400_BAD_REQUEST)
+
+        result = uf.delete_user()
+        if result != 'Ok':
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(None, status=status.HTTP_204_NO_CONTENT)
 
 class CheckConnectionView(PCNTBaseAPIView):
     def post(self, request):

@@ -4,6 +4,8 @@ services:
     container_name: django_app
 #    ports:
 #      - "8090:8000"
+    ports:
+      - "127.0.0.1:8084:8000"
     volumes:
       - .:/app
       - staticfiles:/app/staticfiles
