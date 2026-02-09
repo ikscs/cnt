@@ -31,9 +31,8 @@ class Userfront():
         return 'Ok'
 
     def del_request(self, url):
-        return 'Ok'
         try:
-            response = requests.put(url, headers=self.headers)
+            response = requests.delete(url, headers=self.headers)
         except Exception as err:
             return str(err)
         if response.status_code != 200:
