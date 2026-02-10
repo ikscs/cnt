@@ -14,6 +14,7 @@ from pcnt.views import CallDbFunctionView
 from pcnt.views import CallReportView
 from pcnt.views import RegisterCustomerView
 from pcnt.views import DeleteCustomerView
+from pcnt.views import ReadCustomerView
 
 from .views import HelloView
 from .views import UnsubscribeView
@@ -29,6 +30,7 @@ urlpatterns = [
 
     path("api/register_customer/", RegisterCustomerView.as_view(), name='register_customer'),
     path("api/delete_customer/", DeleteCustomerView.as_view(), name='delete_customer'),
+    path("api/read_customer/", ReadCustomerView.as_view(), name='read_customer'),
 
     path("api/", include(router_api.urls)),
 

@@ -21,6 +21,18 @@ class Userfront():
             "Authorization": self.token
         }
 
+    def get_request(self, url):
+        try:
+            response = requests.get(url, headers=self.headers)
+        except Exception as err:
+            return {'success': False, 'description': str(err)}
+        if response.status_code != 200:
+            return {'success': False, 'description': response.text}
+        try:
+            return response.json()
+        except Exception as err:
+            return {'success': False, 'description': response.text}
+
     def put_request(self, url, data):
         try:
             response = requests.put(url, headers=self.headers, json=data)
@@ -41,6 +53,10 @@ class Userfront():
 
     def delete_user(self):
         result = self.del_request(self.users_url)
+        return result
+
+    def read_user(self):
+        result = self.get_request(self.users_url)
         return result
 
     def set_roles(self, roles):

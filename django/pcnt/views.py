@@ -543,6 +543,23 @@ class DeleteCustomerView(PCNTBaseAPIView):
 
         return Response(None, status=status.HTTP_204_NO_CONTENT)
 
+class ReadCustomerView(PCNTBaseAPIView):
+    def get(self, request):
+        try:
+            user = request.user
+        except Exception as err:
+            return Response('Wrong input data', status=status.HTTP_400_BAD_REQUEST)
+
+        uf = Userfront(user)
+        if uf.error:
+            return Response(uf.error, status=status.HTTP_400_BAD_REQUEST)
+
+        result = uf.read_user()
+        if isinstance(result, dict) and result.get('success') == False:
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(result)
+
 class CheckConnectionView(PCNTBaseAPIView):
     def post(self, request):
         origin_type_id = request.data.get('origin_type_id')
