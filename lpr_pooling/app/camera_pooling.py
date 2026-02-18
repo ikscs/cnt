@@ -11,6 +11,8 @@ from pooling_demo import Demo_runner
 
 from runner import Runner
 
+from service_exchange import Service_exchange
+
 ORIGIN_PROTOCOLS = "'ISAPI', 'DEMO'"
 ZERO_DAY = '2025-10-29 00:00:00+02'
 
@@ -25,6 +27,8 @@ def main():
     runners['Demo'] = demo.run
 
     sl = Sleeper()
+
+    se = Service_exchange()
 
     sql_jobs = f'''
 SELECT o.entity_id, o.credentials, o.poling_period_s, t.params, t.vendor
@@ -99,9 +103,12 @@ LIMIT 1
             if success:
                 db.cursor.executemany(sql_write_events.replace('_ENTITY_ID_', f'{entity_id}'), results)
                 results2 = [{'ts_start': e[1].isoformat(), 'matched_number': e[5]} for e in results if e[5]]
+
                 db.cursor.execute(sql_write_events2, (entity_id, Json(results2)))
 
                 db.cursor.execute(sql_sync_full if is_new_day else sql_sync, (entity_id,))
+
+                reaction_service(se, db.cursor, entity_id, results)
 
             db.cursor.execute(sql_status, [entity_id, success, end_time, err, success, end_time, err])
 
@@ -121,6 +128,35 @@ LIMIT 1
 
         logging.info(f"Sleep {sl.time_sleep}s")
         sl.sleep()
+
+def reaction_service(se, cursor, origin_id, results):
+    plates = dict()
+    for e in results:
+        plates[e[4]] = [e[1].isoformat(), e[3]]
+
+    unnormalize = dict()
+    sql = 'SELECT * FROM lpr.normalize_array(%s);'
+    cursor.execute(sql, [list(plates.keys())])
+
+    result = cursor.fetchall()
+    for e in result:
+        unnormalize[e[1]] = e[0]
+
+    reactions = []
+    sql = "SELECT registration_number, car_owner || '. ' || car_brand AS name, origin_id, origin_name, group_name, reaction_name, common_param, param  FROM lpr.v_lpr_camera_to_reaction WHERE origin_id = %s";
+    cursor.execute(sql, [origin_id])
+    result = cursor.fetchall()
+    for e in result:
+        key = unnormalize.get(e[0])
+        if key not in plates:
+            continue
+        val = plates[key]
+
+        #reactions.append({'origin_id': e[2], 'origin_name': e[3], 'group_name': e[4], 'reaction_name': e[5], 'obj_uuid': val[1], 'context': e[0], 'ts': val[0], 'name': e[1], 'common_param': e[6], 'param': e[7]})
+        reactions.append([e[2], e[3], e[4], e[5], val[1], e[0], val[0], e[1], e[6], e[7]])
+
+    if reactions:
+        se.reaction('lpr', reactions)
 
 if __name__ == "__main__":
     from dotenv import load_dotenv
