@@ -7,6 +7,7 @@ from sender import Sender, get_email_cfg
 from datetime import date, datetime
 
 from pydantic import BaseModel
+from typing import List, Dict, Any
 
 from xlsx_report import mk_xlsx_report
 from img_report import mk_img_report
@@ -14,17 +15,22 @@ from img_report import mk_img_report
 from print_order import print_order
 from make_reaction import make_reaction
 
-class Reaction(BaseModel):
-    point_id: int
-    point_name: str
+class ReactionItem(BaseModel):
+    origin_id: int
+    origin_name: str
     group_name: str
     reaction_name: str
-    face_uuid: str
-    parent_uuid: str
+    obj_uuid: str
+    context: str
     ts: datetime
     name: str
     common_param: dict | None
     param: dict | None
+
+class Reaction(BaseModel):
+    app_id: str
+    #data: List[Dict[str, Any]]
+    data: List[ReactionItem]
 
 app = FastAPI()
 
@@ -123,27 +129,11 @@ def list_to_html(data_list, subject):
     return html_table
 
 @app.post('/reaction.json')
-async def process_reaction(reactions: list[Reaction]):
+async def process_reaction(payload: Reaction):
     db = DB()
     db.open()
 
-    data = []
-    for e in reactions:
-        row = {
-            'point_id': e.point_id,
-            'point_name': e.point_name,
-            'group_name': e.group_name,
-            'reaction_name': e.reaction_name,
-            'face_uuid': e.face_uuid,
-            'parent_uuid': e.parent_uuid,
-            'ts': e.ts.isoformat(),
-            'name': e.name,
-            'common_param': e.common_param if e.common_param else {},
-            'param': e.param if e.param else {},
-        }
-        data.append(row)
-
-    result = make_reaction(db.cursor, data)
+    result = make_reaction(db.cursor, payload.app_id, payload.data)
 
     db.close()
     return JSONResponse(content={"status": 'Ok', "result": result})

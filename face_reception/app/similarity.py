@@ -57,7 +57,7 @@ ORDER BY m.point_id, reaction_id;"""
             self.db.cursor.execute(self.sql4)
             res = self.db.cursor.fetchall()
             if res:
-                self.se.reaction(res)
+                self.se.reaction('mutant', res)
                 self.db.cursor.execute(self.sql5)
 
             self.db.conn.commit()
