@@ -18,7 +18,7 @@ from make_reaction import make_reaction
 class ReactionItem(BaseModel):
     origin_id: int
     origin_name: str
-    group_name: str
+    group_name: str | None
     reaction_name: str
     obj_uuid: str
     context: str
@@ -29,8 +29,8 @@ class ReactionItem(BaseModel):
 
 class Reaction(BaseModel):
     app_id: str
-    #data: List[Dict[str, Any]]
-    data: List[ReactionItem]
+    data: List[Dict[str, Any]]
+    #data: List[ReactionItem]
 
 app = FastAPI()
 

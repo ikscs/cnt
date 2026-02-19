@@ -132,7 +132,7 @@ LIMIT 1
 def reaction_service(se, cursor, origin_id, results):
     plates = dict()
     for e in results:
-        plates[e[4]] = [e[1].isoformat(), e[3]]
+        plates[e[4]] = [e[1], e[0]]
 
     unnormalize = dict()
     sql = 'SELECT * FROM lpr.normalize_array(%s);'
