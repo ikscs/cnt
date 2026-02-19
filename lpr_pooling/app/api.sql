@@ -1,3 +1,21 @@
+-- View: lpr.v_o2p
+-- DROP VIEW lpr.v_o2p;
+CREATE OR REPLACE VIEW lpr.v_o2p
+ AS
+ SELECT p.customer_id,
+    v.camera_id AS entity_id,
+    p.registration_number,
+    p.car_owner,
+    p.car_brand
+   FROM lpr.v_origin_plate_3 v
+     JOIN lpr.lpr_plate p ON v.customer_id = p.customer_id AND v.plate_id = p.id
+  WHERE p.is_enabled AND CURRENT_TIMESTAMP >= p.valid_since AND CURRENT_TIMESTAMP <= p.valid_to;
+ALTER TABLE lpr.v_o2p OWNER TO cnt;
+GRANT ALL ON TABLE lpr.v_o2p TO cnt;
+GRANT SELECT ON TABLE lpr.v_o2p TO lpr_demo;
+GRANT SELECT ON TABLE lpr.v_o2p TO userfront;
+
+
 -- FUNCTION: lpr.get_last_dt(integer)
 -- DROP FUNCTION IF EXISTS lpr.get_last_dt(integer);
 CREATE OR REPLACE FUNCTION lpr.get_last_dt(entity_id_inp integer)
@@ -121,6 +139,35 @@ BEGIN
 END;
 $BODY$;
 ALTER FUNCTION lpr.origin_sync_full(integer) OWNER TO cnt;
+
+
+-- FUNCTION: lpr.sync_all_by_plate_id(integer)
+-- DROP FUNCTION IF EXISTS lpr.sync_all_by_plate_id(integer);
+CREATE OR REPLACE FUNCTION lpr.sync_all_by_plate_id(plate_id_inp integer)
+    RETURNS record
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE PARALLEL UNSAFE
+AS $BODY$
+DECLARE
+    r RECORD;
+BEGIN
+	SELECT camera_id, lpr.origin_sync(camera_id) as result
+	INTO r
+	FROM lpr.v_origin_plate_3 v
+	LEFT JOIN lpr.lpr_origin o ON camera_id=entity_id
+	LEFT JOIN billing.balance b using(customer_id)
+	WHERE 1=1
+	AND o.is_enabled
+	AND NOT o.is_deleted
+	AND NOW() <= b.end_date
+	AND plate_id=plate_id_inp
+	ORDER BY camera_id;
+
+	RETURN r;
+END;
+$BODY$;
+ALTER FUNCTION lpr.sync_all_by_plate_id(integer) OWNER TO cnt;
 
 
 -- PROCEDURE: lpr.lpr_upload_events(integer, jsonb)
