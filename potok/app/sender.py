@@ -45,7 +45,7 @@ class Sender:
                 server.starttls(context=self.context)
                 server.ehlo()
                 server.login(self.smtp_user, self.smtp_password)
-                server.sendmail(self.sender_email, self.receiver_email, msg.as_string())
+                server.send_message(msg)
             #print("[Success] Email sent successfully.")
         except Exception as e:
             print(f"[Error] Failed to send email: {e}")
