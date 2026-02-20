@@ -196,19 +196,19 @@ def email_reaction_lpr(sender, param, data):
 
     subject = param.get('subject', "Vehicle event alert")
 
-    html = f'<div style="max-width: 320px;"><table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">\n'
+    html = f'<div style="text-align: left; max-width: 320px;"><table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">\n'
 
     for n, e in enumerate(data, 1):
         attachment_name.append(e['name'] + f'_event_{n}.jpg')
         attachment_data.append(e['obj_uuid'])
 
-        html += '<tr><td align="center" style="padding: 0 10px;">'
-        html += f'<h1>{e["origin_name"]}<br>{e["context"]}<br>{e["name"]}<br>{e["ts"]}</h1></td>'
+        html += '<tr>\n'
+        html += '<td align="left" style="padding: 0 10px;">'
+        html += f'<img src="cid:att{n}" width="320" style="display: block; width: 100%; max-width: 320px; height: auto;"></td>\n'
         html += f'</tr>\n'
 
-        html += '<tr>\n'
-        html += '<td align="center" style="padding: 0 10px;">'
-        html += f'<img src="cid:att{n}" height="150" style="display: block; width: 100%; max-width: 150px; width: auto;"></td>\n'
+        html += '<tr><td align="left" style="padding: 0 10px;">'
+        html += f'<div>{e["origin_name"]}</div><div><h4 style="margin: 0;">{e["context"]}</div><div><h4 style="margin: 0;">{e["name"]}</h4></div><div>{e["ts"]}</div></td>'
         html += f'</tr>\n'
 
         html += '<tr><td><hr></td></tr>\n'
