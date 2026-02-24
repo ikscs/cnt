@@ -13,12 +13,10 @@ model_genderage = insightface.app.FaceAnalysis(allowed_modules=['detection', 'ge
 model_genderage.prepare(ctx_id=-1)
 
 class Predict():
-    confidence = 0.7
-    area = 40
-    demography = {"age": None,  "gender": None}
-
     def __init__(self):
-        pass
+        self.confidence = 0.7
+        self.area = 40
+        self.demography = {"age": None,  "gender": None}
 
     def process_image(self, face, is_one_person=False, area=None):
         if area != None:

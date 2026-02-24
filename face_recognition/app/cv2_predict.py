@@ -8,10 +8,9 @@ class Predict():
     AGE_LIST = ['(0-2)', '(4-6)', '(8-12)', '(15-20)', '(25-32)', '(38-43)', '(48-53)', '(60-100)']
     GENDER_LIST = ['Man', 'Woman']
 
-    MIDDLE = dict()
-    demography = {"age": None,  "gender": {"Man": None, "Woman": None}, "dominant_gender": None}
-
     def __init__(self):
+        self.MIDDLE = dict()
+        self.demography = {"age": None,  "gender": {"Man": None, "Woman": None}, "dominant_gender": None}
         for n, e in enumerate(self.AGE_LIST):
             z = e[1:-1].split('-')
             self.MIDDLE[n] = (int(z[0]) + int(z[1]))/2

@@ -15,10 +15,10 @@ class Predict():
     #processor = AutoProcessor.from_pretrained("dima806/facial_age_image_detection", use_fast=False)
     model_age = AutoModelForImageClassification.from_pretrained("dima806/facial_age_image_detection")
 
-    MIDDLE = dict()
-    demography = {"age": None,  "gender": {"Man": None, "Woman": None}, "dominant_gender": None}
-
     def __init__(self):
+        self.MIDDLE = dict()
+        self.demography = {"age": None,  "gender": {"Man": None, "Woman": None}, "dominant_gender": None}
+
         last_age = 0
         for n, e in self.model_age.config.id2label.items():
             if e.endswith('+'):
