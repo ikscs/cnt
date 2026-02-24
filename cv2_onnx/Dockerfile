@@ -2,6 +2,11 @@ FROM python:3.12-slim
 
 RUN apt-get update && apt-get install -y \
     mc \
+    libxcb1 \
+    libx11-6 \
+    libxext6 \
+    libxrender1 \
+    libgl1 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY model/. /app/
