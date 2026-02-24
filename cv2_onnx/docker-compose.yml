@@ -1,0 +1,17 @@
+services:
+  cv2_onnx:
+    container_name: cv2_onnx
+    hostname: cv2_onnx
+    build: .
+#    ports:
+#      - "8090:8000"
+    volumes:
+      - /var/screenshots:/var/screenshots
+    networks:
+      - swag_network
+    restart: always
+
+networks:
+  swag_network:
+    driver: bridge
+    external: true
