@@ -42,7 +42,10 @@ FROM one_row AS r
 WHERE r.face_uuid = d.face_uuid
 RETURNING r.face_uuid, get_engine(file_uuid) AS engine;
 '''
+
     sql_update = 'UPDATE face_data SET demography=%s WHERE face_uuid = %s;'
+
+    sql_emb = 'SELECT embedding FROM face_data WHERE face_uuid = %s AND embedding IS NOT NULL;'
 
     def __init__(self):
         self.se = Service_exchange()
@@ -68,20 +71,31 @@ RETURNING r.face_uuid, get_engine(file_uuid) AS engine;
             if not engine:
                 continue
 
-            content = self.se.get_img(face_uuid)
-            if not content:
-                continue
-
-            file_data = BytesIO(content)
-            files = {'f': (face_uuid, file_data, 'application/octet-stream')}
-
             data = engine['param'] if engine['param'] else {}
             if data.get('area'):
                 data['area'] = max((data['area'], face_width_px))
             else:
                 data['area'] = face_width_px
 
+            if data.get('use_embeddings'):
+                files = None
+                self.db.cursor.execute(self.sql_emb, [face_uuid])
+                res = self.db.cursor.fetchone()
+                if not res:
+                    continue
+                data['emb'] = res[0]
+            else:
+                content = self.se.get_img(face_uuid)
+                if not content:
+                    continue
+                file_data = BytesIO(content)
+                files = {'f': (face_uuid, file_data, 'application/octet-stream')}
+
             url = f"{engine['entry_point']}/demography.json"
+
+            data = self.se.post_engine(url, data, files)
+            if not data:
+                break
 
             data = self.se.post_engine(url, data, files)
             if not data:
