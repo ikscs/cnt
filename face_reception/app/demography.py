@@ -97,10 +97,6 @@ RETURNING r.face_uuid, get_engine(file_uuid) AS engine;
             if not data:
                 break
 
-            data = self.se.post_engine(url, data, files)
-            if not data:
-                break
-
             if data:
                 self.db.cursor.execute(self.sql_update, [json.dumps(data[0]), face_uuid])
                 self.db.conn.commit()
