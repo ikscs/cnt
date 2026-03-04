@@ -32,7 +32,7 @@ class custom_SQL():
 
         fields = ', '.join(self.event_keys)
         vars_cnt = ','.join(['%s']*len(self.event_keys))
-        self.sql_insert_event = f"INSERT INTO event_crossline ({fields}) VALUES({vars_cnt}) ON CONFLICT ({fields}) DO NOTHING"
+        self.sql_insert_event = f"INSERT INTO event_crossline (customer_id, {fields}) VALUES(pcnt.get_customer_id_by_origin_id(%s),{vars_cnt}) ON CONFLICT ({fields}) DO NOTHING"
 
 processor = Processor()
 demography = Demography()
@@ -114,7 +114,13 @@ async def upload_json(
     db.open()
     custom_sql = custom_SQL()
 
-    data = [[getattr(row, e, None) for e in custom_sql.event_keys] for row in events]
+    data = []
+    for row in events:
+        r0 = [row.origin_id]
+        r1 = [getattr(row, e, None) for e in custom_sql.event_keys]
+        r0.extend(r1)
+        data.append(r0)
+
     db.cursor.executemany(custom_sql.sql_insert_event, data)
     db.close()
 
@@ -132,5 +138,7 @@ async def demography_json(background_tasks: BackgroundTasks):
 
 @app.get('/similarity.json')
 async def similarity_json(background_tasks: BackgroundTasks):
+    #print('bg start begin')
     background_tasks.add_task(similarity.execute)
+    #print('bg start end')
     return JSONResponse(content={'result': 'Ok'})
