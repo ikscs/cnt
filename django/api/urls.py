@@ -44,6 +44,7 @@ urlpatterns = [
 
 urlpatterns.append(path('api/pcnt/', include('pcnt.urls')))
 urlpatterns.append(path('api/billing/', include('billing.urls')))
+urlpatterns.append(path('api/tune/', include('tune.urls')))
 
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
