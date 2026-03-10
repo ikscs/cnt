@@ -9,7 +9,7 @@ import requests
 KV_DB_URL = 'http://kv_db:5000'
 
 def get_img(uuid):
-    url = f'{KV_DB_URL}/{uuid}'
+    url = f'{KV_DB_URL}/img/{uuid}'
 
     try:
         response = requests.get(url)
