@@ -203,7 +203,7 @@ class Form(models.Model):
 
 class FormData(models.Model):
     id = models.UUIDField(primary_key=True, db_default=Value('gen_random_uuid()', output_field=models.UUIDField()), editable=False,)
-    form_id = models.ForeignKey(Form, models.DO_NOTHING, to_field='id', db_column='form_id', blank=True, null=True, unique=True)
+    form_id = models.ForeignKey(Form, models.DO_NOTHING, to_field='id', db_column='form_id', blank=True, null=True)
     version = models.IntegerField()
     data = models.JSONField(db_comment='JSON данные, собранные через форму')
     created_at = models.DateTimeField()
