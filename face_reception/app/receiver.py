@@ -25,14 +25,14 @@ class Event_record(BaseModel):
 #load_dotenv()
 
 class custom_SQL():
-    event_keys = ['origin', 'origin_id', 'ts', 'prefix', 'name']
+    event_keys = ['origin_id', 'ts', 'prefix', 'name']
 
     def __init__(self):
         self.sql_insert_incoming_with_ts = f"INSERT INTO incoming (file_uuid, origin, origin_id, title, filename, ts) VALUES(%s, %s, %s, %s, %s, %s) ON CONFLICT (file_uuid) DO NOTHING"
 
         fields = ', '.join(self.event_keys)
         vars_cnt = ','.join(['%s']*len(self.event_keys))
-        self.sql_insert_event = f"INSERT INTO event_crossline (customer_id, {fields}) VALUES(pcnt.get_customer_id_by_origin_id(%s),{vars_cnt}) ON CONFLICT ({fields}) DO NOTHING"
+        self.sql_insert_event = f"INSERT INTO event_crossline (customer_id, point_id, {fields}) VALUES(pcnt.get_customer_id_by_origin_id(%s),pcnt.get_point_id_by_origin_id(%s),{vars_cnt}) ON CONFLICT ({fields}) DO NOTHING"
 
 processor = Processor()
 demography = Demography()
@@ -116,7 +116,7 @@ async def upload_json(
 
     data = []
     for row in events:
-        r0 = [row.origin_id]
+        r0 = [row.origin_id, row.origin_id]
         r1 = [getattr(row, e, None) for e in custom_sql.event_keys]
         r0.extend(r1)
         data.append(r0)
