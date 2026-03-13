@@ -71,25 +71,25 @@ LIMIT 1
             if not res:
                 break
 
-            point_id, id, origin, credentials, poling_period_s, params, vendor = res
+            point_id, origin_id, origin, credentials, poling_period_s, params, vendor = res
             point_ids.add(point_id)
 
-            db.cursor.execute(sql_last_dt, [origin])
+            db.cursor.execute(sql_last_dt, [origin_id])
             res = db.cursor.fetchone()
             last_dt = res[0]
 
             runner = Runner(60)
             try:
-                count, end_time = runner.run(runners[vendor], credentials, origin, id, last_dt, params)
+                count, end_time = runner.run(runners[vendor], credentials, origin, origin_id, last_dt, params)
                 err = None
             except Exception as error:
                 count, end_time, err = 0, None, str(error)
                 logging.exception("Error while running job")
             success = bool(end_time != None)
 
-            db.cursor.execute(sql_status, [id, success, end_time, err, success, end_time, err])
+            db.cursor.execute(sql_status, [origin_id, success, end_time, err, success, end_time, err])
 
-            db.cursor.execute(sql_next, [id, poling_period_s, poling_period_s])
+            db.cursor.execute(sql_next, [origin_id, poling_period_s, poling_period_s])
             db.conn.commit()
 
         db.cursor.execute(sql_seconds)
